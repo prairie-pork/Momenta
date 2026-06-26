@@ -32,15 +32,13 @@ button:hover {
 
 #calendar-grid {
     display: grid;
-    width:
-        /* Find out how to set width for computer and phone,
-	  so its conpatible on both. */
-    ;
+    width: /* find way to set it so that it works on mobile and computer. i dont like the width: 90% and max-width: 600px flow;*/
+    margin: 20px auto;
     border: 2px solid #190800;
     border-radius: 4px;
     overflow: hidden;
     box-shadow: 0 2px 4px;
-    margin-top: 10px;
+    margin: 20px;
     grid-template-columns: repeat(7, 1fr);
     background-color: #FFFFAB60;
 }
@@ -63,7 +61,7 @@ button:hover {
     text-align: center;
     border-right: 1px solid #190800;
     border-bottom: 1px solid #190800;
-    min-height: 50px;
+    min-height: 90px;
     display: flex;
     justify-content: center;
     align-items: center;
