@@ -2,7 +2,7 @@ body {
     font-family: Arial, sans-serif;
     background-color: antiquewhite;
     text-align: center;
-    padding-top: 50px;
+    padding-top: 10px;
 }
 
 .calendar-header {
@@ -29,3 +29,58 @@ button:hover {
 #month-display {
     min-width: 150px;
 }
+
+#calendar-grid {
+    display: grid;
+    width:
+        /* Find out how to set width for computer and phone,
+	  so its conpatible on both. */
+    ;
+    border: 2px solid #190800;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px;
+    margin-top: 10px;
+    grid-template-columns: repeat(7, 1fr);
+    background-color: #FFFFAB60;
+}
+
+.day-name {
+    background-color: #ffffff40;
+    padding: 10px 5px;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid #190800;
+    border-right: 1px solid #190800;
+}
+
+.day-name:nth-child(7) {
+    border-right: none;
+}
+
+.day-cell {
+    padding: 15px 5px;
+    text-align: center;
+    border-right: 1px solid #190800;
+    border-bottom: 1px solid #190800;
+    min-height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1em;
+}
+
+.day-cell:nth-child(7) {
+    border-right: none;
+}
+
+.day-cell:nth-last-child(-n + 7) {
+    border-bottom: none;
+}
+
+/* Notes:
+
+reduced padding top for body to make it more mobile friendly
+started styling calender grid
+border color: #190800
+*/
