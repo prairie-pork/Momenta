@@ -23,14 +23,21 @@ const months = [
   "July", "August", "September", "October", "November", "December"
 ];
 
+
+
+
 function updateCalendar() {
+
   //writes month and year into h2 tag
   monthDisplay.textContent = months[currentMonthIndex] + ' ' + currentYear;
 
+
+
   //loops through all boxes and wipes them blank.
+
   for (let i = 0; i < dayCells.length; i++) {
-    dayCells[i].innerHTML = "";
-    dayCells[i].style.display = "flex";
+    dayCells[i].innerHTML = ""; 
+    dayCells[i].style.display = "flex"; 
   }
 
   //calculates calendar metrics for this specific month
@@ -41,28 +48,30 @@ function updateCalendar() {
   for (let day = 1; day <= totalDays; day++) {
     const targetSlotIndex = firstDayIndex + day - 1;
     const cell = dayCells[targetSlotIndex];
-    const dayNumberSpan = document.createElement("span");
-    dayNumberSpan.classList.add("day-number");
-    dayNumberSpan.textContent = day;
 
-    const notesDiv = document.createElement("div");
+    // Create a span for the day number (not editable)
+    const dayNumberSpan = document.createElement('span');
+    dayNumberSpan.classList.add('day-number'); 
+    dayNumberSpan.textContent = day; 
 
-    notesDiv.classList.add("notes-area");
-    notesDiv.contentEditable = "true";
+    //div for the notes (editable)
+    const notesDiv = document.createElement('div');
+    notesDiv.classList.add('notes-area');
+    notesDiv.contentEditable = "true"; 
 
+    //Append the day number and notes area to the day-cell
     cell.appendChild(dayNumberSpan);
     cell.appendChild(notesDiv);
   }
-  //dayCells[targetSlotIndex].textContent = day;
-}
 
-//checks if 6th row is empty and hides it if needed
-//if (dayCells[35].textContent === '') 
-if (firstDayIndex + totalDays <= 35) {
-  //for (let i = 35; 1 < 42; i++) {
-  dayCells[i].style.display = "none";
-}
-}
+
+
+  //checks if 6th row is empty and hides it if needed
+  if (firstDayIndex + totalDays <= 35) {
+    for (let i = 35; i < 42; i++) {
+      dayCells[i].style.display = "none";
+    }
+  }
 }
 
 prevBtn.addEventListener("click", () => {
