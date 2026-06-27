@@ -73,6 +73,13 @@ function updateCalendar() {
     col2.classList.add('notes-column');
     col2.contentEditable = "true";
 
+    const savedData = localStorage.getItem(`momento-${currentYear}-${currentMonthIndex}-${day}`);
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      col1.innerText = parsedData.col1 || '';
+      col2.innerText = parsedData.col2 || '';
+    }
+
     //watch enter key so it goes to column 2 when full
     col1.addEventListener('input', () => {
       if (col1.scrollHeight > col1.clientHeight) {
@@ -88,16 +95,17 @@ function updateCalendar() {
         selection.removeAllRanges();
         selection.addRange(range);
       }
+      localStorage.setItem(`momento-${currentYear}-${currentMonthIndex}-${day}`, JSON.stringify({ col1: col1.innerText, col2: col2.innerText }));
     });
 
-   //watch enter key on column 2 so that it prevents extra vertical lines
-   col2.addEventListener('keydown', (e) => {
+    //watch enter key on column 2 so that it prevents extra vertical lines
+    col2.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         // temporarily clear layout constraints to measure true text content footprint
         col2.style.height = 'auto';
         col2.style.alignSelf = 'flex-start';
         const contentHeight = col2.scrollHeight;
-        
+
         // instantly restore layout styles
         col2.style.height = '';
         col2.style.alignSelf = '';
@@ -116,7 +124,7 @@ function updateCalendar() {
       col2.style.height = 'auto';
       col2.style.alignSelf = 'flex-start';
       const contentHeight = col2.scrollHeight;
-      
+
       col2.style.height = '';
       col2.style.alignSelf = '';
 
@@ -130,6 +138,7 @@ function updateCalendar() {
         selection.removeAllRanges();
         selection.addRange(range);
       }
+      localStorage.setItem(`momento-${currentYear}-${currentMonthIndex}-${day}`, JSON.stringify({ col1: col1.innerText, col2: col2.innerText }));
     });
 
     // append both columns into layout container
