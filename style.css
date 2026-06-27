@@ -32,8 +32,9 @@ button:hover {
 
 #calendar-grid {
     display: grid;
-    width: /* find way to set it so that it works on mobile and computer. i dont like the width: 90% and max-width: 600px flow;*/
-    margin: 20px auto;
+    width:
+        /* find way to set it so that it works on mobile and computer. i dont like the width: 90% and max-width: 600px flow;*/
+        margin: 20px auto;
     border: 2px solid #190800;
     border-radius: 4px;
     overflow: hidden;
@@ -57,15 +58,16 @@ button:hover {
 }
 
 .day-cell {
-    padding: 15px 5px;
+    padding: 10px;
     text-align: center;
     border-right: 1px solid #190800;
     border-bottom: 1px solid #190800;
     min-height: 90px;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: flex-start;
     font-size: 1.1em;
+    box-sizing: border-box;
 }
 
 .day-cell:nth-child(7) {
