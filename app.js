@@ -36,8 +36,8 @@ function updateCalendar() {
   //loops through all boxes and wipes them blank.
 
   for (let i = 0; i < dayCells.length; i++) {
-    dayCells[i].innerHTML = ""; 
-    dayCells[i].style.display = "flex"; 
+    dayCells[i].innerHTML = "";
+    dayCells[i].style.display = "flex";
   }
 
   //calculates calendar metrics for this specific month
@@ -51,36 +51,109 @@ function updateCalendar() {
 
     // Create a span for the day number (not editable)
     const dayNumberSpan = document.createElement('span');
-    dayNumberSpan.classList.add('day-number'); 
-    dayNumberSpan.textContent = day; 
+    dayNumberSpan.classList.add('day-number');
+    dayNumberSpan.textContent = day;
 
-    //div for the notes (editable)
-    const notesDiv = document.createElement('div');
-    notesDiv.classList.add('notes-area');
-    notesDiv.contentEditable = "true"; 
+    //div for the notes (editable) OLD CODE
+    //const notesDiv = document.createElement('div');
+    //notesDiv.classList.add('notes-area');
+    //notesDiv.contentEditable = "true"; 
 
-    //Append the day number and notes area to the day-cell
+    //container to hold two columns side by side
+    const notesContainer = document.createElement('div');
+    notesContainer.classList.add('notes-container')
+
+    //left column text field
+    const col1 = document.createElement('div');
+    col1.classList.add('notes-column');
+    col1.contentEditable = "true";
+
+    //right column text field
+    const col2 = document.createElement('div');
+    col2.classList.add('notes-column');
+    col2.contentEditable = "true";
+
+    //watch enter key so it goes to column 2 when full
+    col1.addEventListener('input', () => {
+      if (col1.scrollHeight > col1.clientHeight) {
+        const text = col1.innerText;
+        col1.innerText = text.slice(0, -1);
+        col2.focus();
+        col2.innerText = text.slice(-1);
+
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(col2);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+
+   //watch enter key on column 2 so that it prevents extra vertical lines
+   col2.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        // temporarily clear layout constraints to measure true text content footprint
+        col2.style.height = 'auto';
+        col2.style.alignSelf = 'flex-start';
+        const contentHeight = col2.scrollHeight;
+        
+        // instantly restore layout styles
+        col2.style.height = '';
+        col2.style.alignSelf = '';
+
+        // calculate remaining vertical room
+        const remainingSpace = col2.clientHeight - contentHeight;
+
+        if (remainingSpace < 18) {
+          e.preventDefault();
+        }
+      }
+    });
+
+    col2.addEventListener('input', () => {
+
+      col2.style.height = 'auto';
+      col2.style.alignSelf = 'flex-start';
+      const contentHeight = col2.scrollHeight;
+      
+      col2.style.height = '';
+      col2.style.alignSelf = '';
+
+      if (contentHeight > col2.clientHeight) {
+        col2.innerText = col2.innerText.slice(0, -1);
+
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(col2);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+
+    // append both columns into layout container
+    notesContainer.appendChild(col1);
+    notesContainer.appendChild(col2);
+
+    //append the number and the column layout container to the calendar cell
     cell.appendChild(dayNumberSpan);
-    cell.appendChild(notesDiv);
-  }
+    cell.appendChild(notesContainer);
 
-
-
-  //checks if 6th row is empty and hides it if needed
-  if (firstDayIndex + totalDays <= 35) {
-    for (let i = 35; i < 42; i++) {
-      dayCells[i].style.display = "none";
+    //checks if 6th row is empty and hides it if needed
+    if (firstDayIndex + totalDays <= 35) {
+      for (let i = 35; i < 42; i++) {
+        dayCells[i].style.display = "none";
+      }
     }
   }
 }
-
 prevBtn.addEventListener("click", () => {
   currentMonthIndex = currentMonthIndex - 1;
   if (currentMonthIndex < 0) {
     currentMonthIndex = 11;
     currentYear = currentYear - 1;
   }
-
 
   updateCalendar();
 });
