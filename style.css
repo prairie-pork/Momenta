@@ -5,14 +5,6 @@ body {
     padding-top: 10px;
 }
 
-.calendar-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    margin-top: 30px;
-}
-
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -27,20 +19,15 @@ button:hover {
     background-color: #f8cb97;
 }
 
-#month-display {
-    min-width: 150px;
-}
-
 #calendar-grid {
     display: grid;
-    width: none;
-    /* find way to set it so that it works on mobile and computer. i dont like the width: 90% and max-width: 600px flow;*/
+    width: 95%;
+    max-width: 1200px;
     margin: 20px auto;
     border: 2px solid #190800;
     border-radius: 4px;
     overflow: hidden;
     box-shadow: 0 2px 4px;
-    /*margin: 20px;*/
     grid-template-columns: repeat(7, 1fr);
     background-color: #FFFFAB60;
 }
@@ -63,7 +50,7 @@ button:hover {
     text-align: center;
     border-right: 1px solid #190800;
     border-bottom: 1px solid #190800;
-    height: 120px;
+    height: 140px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -117,6 +104,591 @@ button:hover {
     outline: none;
     overflow: hidden;
     word-break: break-word;
+}
+
+/* =============================================
+   AUTHENTICATION PAGES (login.html / signup.html)
+   ============================================= */
+
+.auth-container {
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 30px;
+  background-color: #fff8f0;
+  border: 2px solid #190800;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.auth-container h1 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: #190800;
+  font-size: 1.6em;
+}
+
+.form-group {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: #190800;
+  font-size: 0.9em;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #190800;
+}
+
+.big-date-input {
+  font-size: 1.1em !important;
+  padding: 12px 14px !important;
+  height: auto !important;
+  cursor: pointer;
+}
+
+.auth-message {
+  margin-bottom: 16px;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.9em;
+  display: none;
+}
+
+.auth-message.error {
+  display: block;
+  background-color: #ffe0e0;
+  color: #c00;
+  border: 1px solid #c00;
+}
+
+.auth-message.success {
+  display: block;
+  background-color: #e0ffe0;
+  color: #080;
+  border: 1px solid #080;
+}
+
+.auth-link {
+  margin-top: 20px;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.auth-link a {
+  color: #190800;
+  font-weight: bold;
+}
+
+/* =============================================
+   USER BAR (top of protected pages)
+   ============================================= */
+
+#user-bar {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto 10px;
+  padding: 10px 20px;
+  background-color: #fff8f0;
+  border: 1px solid #190800;
+  border-radius: 6px;
+  font-size: 0.85em;
+}
+
+#user-email {
+  color: #190800;
+  font-weight: bold;
+}
+
+#logout-btn {
+  padding: 6px 16px;
+  font-size: 0.85em;
+}
+
+/* =============================================
+   LOADING SCREEN
+   ============================================= */
+
+#loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: antiquewhite;
+  z-index: 9999;
+  font-size: 1.2em;
+  color: #190800;
+}
+
+/* =============================================
+   TOOLBAR
+   ============================================= */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto 12px;
+  padding: 10px 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.app-header h1 {
+  font-size: 2.2em;
+  margin: 0 30px 0 0;
+  white-space: nowrap;
+  color: #190800;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-right: auto;
+}
+
+.header-nav h2 {
+  margin: 0;
+  min-width: 200px;
+  font-size: 1.5em;
+  text-align: center;
+  color: #190800;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.header-actions button {
+  font-size: 0.9em;
+  padding: 9px 16px;
+  white-space: nowrap;
+}
+
+
+
+/* =============================================
+   EVENT BADGES (inside day cells)
+   ============================================= */
+
+.event-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.event-badge {
+  font-size: 0.75em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+  white-space: nowrap;
+  color: white;
+}
+
+.event-badge.breed     { background-color: #2d7a2d; }
+.event-badge.lock_up   { background-color: #4169e1; }
+.event-badge.farrowing { background-color: #b8860b; }
+.event-badge.vaccinate { background-color: #9632c8; }
+.event-badge.weaning   { background-color: #aa2222; }
+
+/* =============================================
+   MODAL OVERLAY
+   ============================================= */
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff8f0;
+  border: 2px solid #190800;
+  border-radius: 8px;
+  padding: 28px;
+  max-width: 460px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+  margin: 0 0 6px;
+  color: #190800;
+  font-size: 1.4em;
+}
+
+.modal-note {
+  margin: 0 0 20px;
+  font-size: 0.85em;
+  color: #666;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.modal-buttons button {
+  flex: 1;
+}
+
+.btn-secondary {
+  background-color: #e8d5c4 !important;
+  border-color: #999 !important;
+}
+
+.btn-secondary:hover {
+  background-color: #dcc4b0 !important;
+}
+
+/* =============================================
+   DAY CELL - events background override
+   ============================================= */
+
+.day-cell {
+  transition: background-color 0.2s;
+}
+
+/* =============================================
+   EVENTS LIST MODAL
+   ============================================= */
+
+.events-list-modal {
+  max-width: 650px !important;
+}
+
+#events-list-container {
+  max-height: 55vh;
+  overflow-y: auto;
+  text-align: left;
+  margin: 16px 0;
+}
+
+.batch-group {
+  border: 1px solid #d4c4b0;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: #fffdf8;
+}
+
+.batch-group h3 {
+  margin: 0 0 6px;
+  font-size: 1.1em;
+  color: #190800;
+}
+
+.batch-group h3 strong {
+  font-weight: bold;
+}
+
+.batch-group > .delete-btn {
+  margin-bottom: 10px;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 0.95em;
+  border-top: 1px solid #f0e8dc;
+}
+
+.event-row:last-child {
+  padding-bottom: 4px;
+}
+
+.event-row:first-child {
+  border-top: none;
+}
+
+.event-row .event-type-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.event-row .event-date {
+  color: #555;
+  min-width: 120px;
+  font-family: monospace;
+}
+
+.event-row .event-type-label {
+  min-width: 70px;
+  font-weight: bold;
+  color: #190800;
+  font-size: 1em;
+}
+
+.event-row .event-batch-label {
+  color: #777;
+  font-size: 0.9em;
+  flex: 1;
+}
+
+.event-row button {
+  font-size: 0.85em;
+  padding: 5px 14px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.delete-btn {
+  background-color: #fdd !important;
+  border-color: #c99 !important;
+  color: #822 !important;
+}
+
+.delete-btn:hover {
+  background-color: #fbb !important;
+}
+
+.empty-events {
+  text-align: center;
+  color: #888;
+  padding: 30px 0;
+  font-size: 0.9em;
+}
+
+/* =============================================
+   YEAR VIEW - MINI CALENDARS
+   ============================================= */
+
+.year-view-modal {
+  max-width: 1100px !important;
+  width: 95% !important;
+  max-height: 90vh;
+}
+
+.year-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.year-view-header h2 {
+  margin: 0;
+  color: #190800;
+  font-size: 1.5em;
+}
+
+.year-view-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.year-view-actions button {
+  font-size: 0.85em;
+  padding: 6px 14px;
+}
+
+#year-view-year {
+  font-weight: bold;
+  font-size: 1.2em;
+  min-width: 70px;
+  text-align: center;
+}
+
+#year-view-content {
+  max-height: 68vh;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.year-mini-calendars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.mini-month {
+  border: 1px solid #d4c4b0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fffdf8;
+}
+
+.mini-month-header {
+  text-align: center;
+  font-weight: bold;
+  padding: 7px;
+  background: #f0e8dc;
+  font-size: 0.9em;
+  border-bottom: 1px solid #d4c4b0;
+  color: #190800;
+}
+
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.75em;
+}
+
+.mini-day-name {
+  padding: 4px 0;
+  font-weight: bold;
+  font-size: 0.7em;
+  color: #888;
+  border-bottom: 1px solid #eee;
+}
+
+.mini-day-cell {
+  padding: 4px 0;
+  font-size: 0.85em;
+  min-height: 24px;
+  position: relative;
+  font-weight: normal;
+  border-radius: 2px;
+}
+
+.mini-day-cell.has-event {
+  font-weight: bold;
+}
+
+.mini-day-cell .mini-event-dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 1px;
+}
+
+.mini-day-cell .mini-event-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.year-view-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #d4c4b0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8em;
+  color: #555;
+}
+
+.legend-item .legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* =============================================
+   PRINT STYLES
+   ============================================= */
+
+@media print {
+  body {
+    background: white !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #year-view-modal,
+  #year-view-modal *,
+  #year-view-content,
+  #year-view-content * {
+    visibility: visible;
+  }
+  #year-view-modal {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    background: white !important;
+    overflow: visible !important;
+    padding: 10px !important;
+  }
+  .modal-content.year-view-modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 10px !important;
+    overflow: visible !important;
+  }
+  .year-view-actions button {
+    display: none !important;
+  }
+  #year-view-content {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .year-mini-calendars {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 12px !important;
+  }
+  .mini-month {
+    page-break-inside: avoid;
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Notes:
