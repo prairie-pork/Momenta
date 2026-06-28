@@ -46,8 +46,8 @@ window.signOut = async function () {
 // GET CURRENT USER - Who is logged in right now?
 // =============================================
 window.getCurrentUser = async function () {
-  const { data: { user } } = await window.supabase.auth.getUser();
-  return user;
+  const { data: { session } } = await window.supabase.auth.getSession();
+  return session ? session.user : null;
 };
 
 // =============================================

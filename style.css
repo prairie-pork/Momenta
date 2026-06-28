@@ -1,35 +1,193 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
 body {
     font-family: Arial, sans-serif;
     background-color: antiquewhite;
-    text-align: center;
-    padding-top: 10px;
+    box-sizing: border-box;
 }
 
 button {
-    padding: 10px 20px;
-    font-size: 16px;
+    padding: 8px 16px;
+    font-size: 14px;
     cursor: pointer;
-    border: 1px solid darkred;
-    background-color: #ffe4c4;
-    border-radius: 10px;
-    color: black;
+    border: 1px solid #190800;
+    background-color: #fff8f0;
+    border-radius: 8px;
+    color: #190800;
+    transition: background-color 0.15s;
+}
+button:hover {
+    background-color: #f0dcc8;
 }
 
-button:hover {
-    background-color: #f8cb97;
+/* =============================================
+   LAYOUT: sidebar + calendar main
+   ============================================= */
+.app-layout {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 260px;
+    min-width: 260px;
+    background-color: #f5ebe0;
+    border-right: 2px solid #190800;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.sidebar-brand {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #190800;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #d4c4b0;
+    margin-bottom: 4px;
+}
+
+.sidebar-group {
+    padding: 8px 0;
+    border-bottom: 1px solid #d4c4b0;
+}
+.sidebar-group:last-child {
+    border-bottom: none;
+}
+
+.sidebar-group-title {
+    font-size: 0.75em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #887a6a;
+    margin-bottom: 6px;
+}
+
+.sidebar-email {
+    font-size: 0.8em;
+    color: #555;
+    display: block;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+.sidebar-btn:last-child {
+    margin-bottom: 0;
+}
+
+.sidebar-btn-sm {
+    padding: 6px 10px;
+    font-size: 0.8em;
+    border-radius: 6px;
+}
+
+.sidebar-cal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 6px;
+}
+
+.cal-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 6px 10px;
+    font-size: 0.85em;
+    border: 1px solid #190800;
+    background-color: #fff8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #190800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    transition: background-color 0.15s;
+}
+.cal-btn:hover {
+    background-color: #f0dcc8;
+}
+.cal-btn-active {
+    background-color: #190800 !important;
+    color: #ffe4c4 !important;
+    font-weight: bold;
+}
+
+.sidebar-month-name {
+    margin: 0 0 6px;
+    font-size: 1.3em;
+    text-align: center;
+    color: #190800;
+}
+
+.sidebar-nav-row {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+#create-farm-btn, #join-farm-btn {
+    width: 100%;
+    text-align: center;
+    font-size: 0.8em;
+    padding: 6px 10px;
+    margin-bottom: 3px;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+#create-farm-btn:last-child, #join-farm-btn:last-child {
+    margin-bottom: 0;
+}
+
+/* Calendar main area */
+.calendar-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 20px 20px;
+    overflow-y: auto;
+}
+
+.calendar-header {
+    margin: 16px 0 12px;
+    font-size: 1.6em;
+    color: #190800;
+    text-align: center;
 }
 
 #calendar-grid {
     display: grid;
-    width: 95%;
-    max-width: 1200px;
-    margin: 20px auto;
+    width: 100%;
+    max-width: 1100px;
     border: 2px solid #190800;
     border-radius: 4px;
     overflow: hidden;
     box-shadow: 0 2px 4px;
     grid-template-columns: repeat(7, 1fr);
     background-color: #FFFFAB60;
+    overflow-anchor: none;
 }
 
 .day-name {
@@ -46,11 +204,11 @@ button:hover {
 }
 
 .day-cell {
-    padding: 8px;
+    padding: 6px;
     text-align: center;
     border-right: 1px solid #190800;
     border-bottom: 1px solid #190800;
-    height: 140px;
+    height: 120px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -74,24 +232,10 @@ button:hover {
     margin-bottom: 5px;
 }
 
-.notes-area {
-    flex-grow: 1;
-    width: 100%;
-    text-align: left;
-    font-size: 0.75em;
-    color: #333;
-    outline: none;
-    word-break: break-word;
-    height: 58px;
-    column-count: 2;
-    column-gap: 6px;
-    overflow: hidden;
-}
-
 .notes-container {
     display: flex;
     width: 100%;
-    height: 88px;
+    height: 70px;
     gap: 6px;
 }
 
@@ -197,33 +341,6 @@ button:hover {
 }
 
 /* =============================================
-   USER BAR (top of protected pages)
-   ============================================= */
-
-#user-bar {
-  display: none;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 800px;
-  margin: 0 auto 10px;
-  padding: 10px 20px;
-  background-color: #fff8f0;
-  border: 1px solid #190800;
-  border-radius: 6px;
-  font-size: 0.85em;
-}
-
-#user-email {
-  color: #190800;
-  font-weight: bold;
-}
-
-#logout-btn {
-  padding: 6px 16px;
-  font-size: 0.85em;
-}
-
-/* =============================================
    LOADING SCREEN
    ============================================= */
 
@@ -241,57 +358,6 @@ button:hover {
   font-size: 1.2em;
   color: #190800;
 }
-
-/* =============================================
-   TOOLBAR
-   ============================================= */
-
-.app-header {
-  display: flex;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto 12px;
-  padding: 10px 20px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.app-header h1 {
-  font-size: 2.2em;
-  margin: 0 30px 0 0;
-  white-space: nowrap;
-  color: #190800;
-}
-
-.header-nav {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-right: auto;
-}
-
-.header-nav h2 {
-  margin: 0;
-  min-width: 200px;
-  font-size: 1.5em;
-  text-align: center;
-  color: #190800;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.header-actions button {
-  font-size: 0.9em;
-  padding: 9px 16px;
-  white-space: nowrap;
-}
-
-
 
 /* =============================================
    EVENT BADGES (inside day cells)
@@ -498,9 +564,9 @@ button:hover {
    ============================================= */
 
 .year-view-modal {
-  max-width: 1100px !important;
-  width: 95% !important;
-  max-height: 90vh;
+  max-width: 1400px !important;
+  width: 97% !important;
+  max-height: 92vh;
 }
 
 .year-view-header {
@@ -544,9 +610,21 @@ button:hover {
 
 .year-mini-calendars {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
   padding: 8px 0;
+}
+
+@media (max-width: 1100px) {
+  .year-mini-calendars {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .year-mini-calendars {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .mini-month {
@@ -559,9 +637,9 @@ button:hover {
 .mini-month-header {
   text-align: center;
   font-weight: bold;
-  padding: 7px;
+  padding: 10px;
   background: #f0e8dc;
-  font-size: 0.9em;
+  font-size: 1em;
   border-bottom: 1px solid #d4c4b0;
   color: #190800;
 }
@@ -570,24 +648,24 @@ button:hover {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  font-size: 0.75em;
+  font-size: 0.85em;
 }
 
 .mini-day-name {
-  padding: 4px 0;
+  padding: 6px 0;
   font-weight: bold;
-  font-size: 0.7em;
+  font-size: 0.75em;
   color: #888;
   border-bottom: 1px solid #eee;
 }
 
 .mini-day-cell {
-  padding: 4px 0;
-  font-size: 0.85em;
-  min-height: 24px;
+  padding: 6px 0;
+  font-size: 0.95em;
+  min-height: 30px;
   position: relative;
   font-weight: normal;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .mini-day-cell.has-event {
@@ -603,8 +681,8 @@ button:hover {
 
 .mini-day-cell .mini-event-dot {
   display: inline-block;
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
 }
 
@@ -639,10 +717,13 @@ button:hover {
 @media print {
   body {
     background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-sizing: border-box !important;
   }
   body * {
     visibility: hidden;
@@ -657,37 +738,202 @@ button:hover {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
-    width: 100% !important;
-    height: auto !important;
+    width: 100vw !important;
+    min-height: 100vh !important;
     display: block !important;
     background: white !important;
     overflow: visible !important;
-    padding: 10px !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
   .modal-content.year-view-modal {
     max-width: 100% !important;
-    width: 100% !important;
+    width: 100vw !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 10px !important;
+    padding: 15px !important;
     overflow: visible !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
   }
+  .year-view-header button,
   .year-view-actions button {
     display: none !important;
+  }
+  .year-view-header {
+    margin-bottom: 20px !important;
   }
   #year-view-content {
     max-height: none !important;
     overflow: visible !important;
+    padding: 0 !important;
   }
   .year-mini-calendars {
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 12px !important;
+    gap: 16px !important;
+    padding: 0 !important;
   }
   .mini-month {
     page-break-inside: avoid;
+    border: 1px solid #ccc !important;
+  }
+  .mini-day-cell {
+    min-height: 28px !important;
+    padding: 5px 0 !important;
   }
   ::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* =============================================
+   TODAY HIGHLIGHT
+   ============================================= */
+
+.today-cell {
+  outline: 3px solid #190800;
+  outline-offset: -3px;
+  background-color: rgba(25, 8, 0, 0.04);
+}
+
+/* =============================================
+   LOADING INDICATOR
+   ============================================= */
+
+/* =============================================
+   TODAY BUTTON
+   ============================================= */
+
+.btn-accent {
+  background-color: #190800 !important;
+  color: #ffe4c4 !important;
+  border-color: #190800 !important;
+}
+
+.btn-accent:hover {
+  background-color: #d4a087 !important;
+}
+
+.btn-danger {
+  background-color: #c0392b !important;
+  border-color: #a93226 !important;
+  color: #fff !important;
+}
+
+.btn-danger:hover {
+  background-color: #a93226 !important;
+}
+
+/* =============================================
+   MOBILE RESPONSIVE
+   ============================================= */
+
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column;
+    height: auto;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 2px solid #190800;
+    padding: 10px 14px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    overflow-y: visible;
+  }
+  .sidebar-brand {
+    font-size: 1.3em;
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 0;
+    margin-right: 10px;
+  }
+  .sidebar-group {
+    padding: 0;
+    border-bottom: none;
+  }
+  .sidebar-group-title {
+    display: none;
+  }
+  .sidebar-email {
+    font-size: 0.7em;
+  }
+  .sidebar-btn {
+    padding: 4px 8px;
+    font-size: 0.75em;
+    margin-bottom: 0;
+    display: inline-block;
+    width: auto;
+  }
+  .sidebar-btn-sm {
+    padding: 4px 8px;
+    font-size: 0.7em;
+  }
+  .sidebar-cal-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 0;
+  }
+  .cal-btn {
+    width: auto;
+    padding: 3px 8px;
+    font-size: 0.7em;
+  }
+  .sidebar-month-name {
+    font-size: 1em;
+    margin: 0;
+  }
+  .sidebar-nav-row {
+    gap: 3px;
+  }
+  #create-farm-btn, #join-farm-btn {
+    width: auto;
+    font-size: 0.7em;
+    padding: 4px 8px;
+    margin-bottom: 0;
+  }
+  .calendar-main {
+    padding: 8px 6px;
+  }
+  .day-cell {
+    height: 90px;
+    padding: 4px;
+    font-size: 0.9em;
+  }
+  .notes-container {
+    height: 50px;
+    gap: 3px;
+  }
+  .notes-column {
+    font-size: 0.65em;
+  }
+  .event-badge {
+    font-size: 0.6em;
+    padding: 1px 3px;
+  }
+  .today-cell {
+    outline-width: 2px;
+    outline-offset: -2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .day-cell {
+    height: 80px;
+    padding: 3px;
+  }
+  .day-number {
+    font-size: 0.75em;
+    margin-bottom: 2px;
+  }
+  .notes-container {
+    height: 40px;
+  }
+  .event-labels {
+    margin-bottom: 3px;
   }
 }
 

@@ -10,28 +10,55 @@
 
 <body>
 
-  <div id="user-bar" style="display: none;">
-    <span id="user-email"></span>
-    <button id="logout-btn">Log Out</button>
-  </div>
+  <div class="app-layout">
+    <aside class="sidebar">
 
-  <!-- Header: title + nav + action buttons -->
-  <div class="app-header">
-    <h1>Momenta</h1>
-    <div class="header-nav">
-      <button id="prev-btn">Back</button>
-      <h2 id="month-display"></h2>
-      <button id="next-btn">Next</button>
-    </div>
-    <div class="header-actions">
-      <button id="add-batch-btn">+ Add Batch</button>
-      <button id="all-events-btn">All Events</button>
-      <button id="year-view-btn">Year View</button>
-      <button id="settings-btn">Settings</button>
-    </div>
-  </div>
+      <!-- Brand -->
+      <div class="sidebar-brand">Momenta</div>
 
-  <div id="calendar-grid">
+      <!-- Account -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Account</div>
+        <div id="sidebar-user" style="display:none;">
+          <span id="sidebar-email" class="sidebar-email"></span>
+          <button id="logout-btn" class="sidebar-btn">Log Out</button>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Farms</div>
+        <div id="calendar-list" class="sidebar-cal-list"></div>
+        <button id="create-farm-btn" class="sidebar-btn btn-accent">+ New Farm</button>
+        <button id="join-farm-btn" class="sidebar-btn">Join Farm</button>
+      </div>
+
+      <!-- Month Navigation -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Month</div>
+        <h2 id="month-display" class="sidebar-month-name"></h2>
+        <div class="sidebar-nav-row">
+          <button id="prev-btn" class="sidebar-btn-sm">◀</button>
+          <button id="today-btn" class="sidebar-btn-sm btn-accent">Today</button>
+          <button id="next-btn" class="sidebar-btn-sm">▶</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Actions</div>
+        <button id="add-batch-btn" class="sidebar-btn">+ Add Batch</button>
+        <button id="all-events-btn" class="sidebar-btn">All Events</button>
+        <button id="year-view-btn" class="sidebar-btn">Year View</button>
+        <button id="settings-btn" class="sidebar-btn">Settings</button>
+        <button id="manage-farm-btn" class="sidebar-btn" style="display:none;">Manage Farm</button>
+      </div>
+
+    </aside>
+
+    <main class="calendar-main">
+    <h1 id="calendar-header" class="calendar-header">June 2026</h1>
+    <div id="calendar-grid">
     <div class="day-name">Sun</div>
     <div class="day-name">Mon</div>
     <div class="day-name">Tue</div>
@@ -82,6 +109,8 @@
     <div class="day-cell"></div>
     <div class="day-cell"></div>
     <div class="day-cell"></div>
+    </div>
+    </main>
   </div>
 
   <!-- Add Batch Modal -->
@@ -164,17 +193,62 @@
   <!-- Reschedule Modal -->
   <div id="reschedule-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
-      <h2>Reschedule Batch</h2>
-      <p class="modal-note">Changing the breed date will recalculate all stages for this batch.</p>
+      <h2 id="reschedule-title">Reschedule Event</h2>
+      <p id="reschedule-note" class="modal-note">Update the date for this specific event.</p>
       <form id="reschedule-form" novalidate>
         <div class="form-group">
-          <label for="reschedule-breed-date">New Breed Start Date</label>
-          <input type="date" id="reschedule-breed-date" class="big-date-input" required>
+          <label for="reschedule-new-date">New Date</label>
+          <input type="date" id="reschedule-new-date" class="big-date-input" required>
+        </div>
+        <div class="form-group" id="reschedule-end-group" style="display:none;">
+          <label for="reschedule-end-date">End Date</label>
+          <input type="date" id="reschedule-end-date" class="big-date-input">
         </div>
         <div id="reschedule-message" class="auth-message"></div>
         <div class="modal-buttons">
-          <button type="submit" id="save-reschedule-btn">Update Batch</button>
+          <button type="submit" id="save-reschedule-btn">Update</button>
           <button type="button" id="cancel-reschedule" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage Farm Modal -->
+  <div id="manage-farm-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content events-list-modal">
+      <h2 id="manage-farm-heading" style="font-size:1.5em;font-weight:bold;text-transform:uppercase;text-align:center;margin-bottom:4px;">MANAGE FARM</h2>
+      <p style="font-size:1.2em;font-weight:bold;text-align:center;margin:0 0 20px;" id="manage-farm-name"></p>
+      <div id="farm-members-section" style="margin-bottom:24px;">
+        <h3 style="margin:0 0 10px;font-size:1em;">Members</h3>
+        <div id="farm-members-list"></div>
+      </div>
+      <div id="farm-invites-section" style="margin-bottom:24px;">
+        <h3 style="margin:0 0 10px;font-size:1em;">Invite Codes</h3>
+        <button id="generate-invite-btn" style="margin-bottom:10px;">+ Generate New Code</button>
+        <div id="invite-message" class="auth-message"></div>
+        <div id="farm-invites-list"></div>
+      </div>
+      <div class="modal-buttons" style="margin-top:16px;">
+        <button type="button" id="close-manage-farm" class="btn-secondary">Close</button>
+        <button type="button" id="delete-farm-btn" class="btn-danger">Delete Farm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Join Farm Modal -->
+  <div id="join-farm-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h2>Join a Farm</h2>
+      <p class="modal-note">Enter the invite code shared by the farm owner.</p>
+      <form id="join-farm-form" novalidate>
+        <div class="form-group">
+          <label for="invite-code-input">Invite Code</label>
+          <input type="text" id="invite-code-input" placeholder="e.g. ABC123" required style="text-transform:uppercase;font-size:1.2em;letter-spacing:3px;text-align:center;">
+        </div>
+        <div id="join-farm-message" class="auth-message"></div>
+        <div class="modal-buttons">
+          <button type="submit" id="join-farm-btn-submit">Join Farm</button>
+          <button type="button" id="cancel-join-farm" class="btn-secondary">Cancel</button>
         </div>
       </form>
     </div>

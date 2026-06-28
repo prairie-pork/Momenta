@@ -35,6 +35,9 @@
     <p class="auth-link">
       Already have an account? <a href="login.html">Log in</a>
     </p>
+    <p class="auth-link" style="margin-top:8px;font-size:0.8em;">
+      <a href="privacy.html">Privacy Policy</a>
+    </p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -85,7 +88,11 @@
       submitBtn.textContent = 'Creating account...';
 
       try {
-        await signUp(email, password);
+        const result = await signUp(email, password);
+        if (!result.session) {
+          showMessage('Account created! Check your email (' + email + ') for a confirmation link, then log in.', 'success');
+          return;
+        }
         showMessage('Account created! Redirecting to your calendar...', 'success');
         setTimeout(function () {
           window.location.href = 'index.html';
