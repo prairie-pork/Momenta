@@ -205,6 +205,16 @@ function updateFarmAvailability() {
     const btn = document.getElementById(id);
     if (btn) btn.disabled = !hasFarm;
   }
+  // Mobile nav buttons
+  const mobileDisabledIds = ['mobile-add-batch-btn', 'mobile-add-event-btn', 'mobile-review-btn'];
+  for (const id of mobileDisabledIds) {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.disabled = !hasFarm;
+      if (!hasFarm) btn.classList.add('mobile-nav-disabled');
+      else btn.classList.remove('mobile-nav-disabled');
+    }
+  }
 }
 
 // =============================================
@@ -551,14 +561,29 @@ async function updateCalendar() {
 
       const labelsDiv = document.createElement('div');
       labelsDiv.classList.add('event-labels');
+      let primaryBadgeRendered = false;
       for (const evt of dayEvents) {
         const style = eventStyle(evt.event_type);
         const badge = document.createElement('span');
         badge.classList.add('event-badge', evt.event_type);
         badge.style.backgroundColor = style.badge;
-        badge.textContent = evt.event_type.startsWith('custom:')
-          ? style.label
-          : style.label + ' ' + evt.batch_name + ' ' + evt.batch_number;
+        const isCustom = evt.event_type.startsWith('custom:');
+        if (!isCustom && !primaryBadgeRendered) {
+          // First standard event: two-line badge (type + batch name)
+          primaryBadgeRendered = true;
+          badge.classList.add('primary-badge');
+          const typeSpan = document.createElement('span');
+          typeSpan.classList.add('badge-type');
+          typeSpan.textContent = style.label;
+          const batchSpan = document.createElement('span');
+          batchSpan.classList.add('badge-batch');
+          batchSpan.textContent = evt.batch_name + ' ' + evt.batch_number;
+          badge.appendChild(typeSpan);
+          badge.appendChild(batchSpan);
+        } else {
+          // Custom events and subsequent standard events: compact single line
+          badge.textContent = style.label;
+        }
         labelsDiv.appendChild(badge);
       }
       cell.appendChild(labelsDiv);
@@ -1674,5 +1699,160 @@ try {
 } catch (e) { console.error('updateCalendar failed after retries:', e); }
 
 loadingScreen.style.display = 'none';
+
+// =============================================
+// Mobile Nav Wiring
+// =============================================
+(function setupMobileNav() {
+  // Sync mobile month display with main display
+  const mobileMonthDisplay = document.getElementById('mobile-month-display');
+  const origUpdateCalendar = updateCalendar;
+
+  function syncMobileMonth() {
+    if (mobileMonthDisplay) {
+      mobileMonthDisplay.textContent = months[currentMonthIndex] + ' ' + currentYear;
+    }
+  }
+
+  // Patch updateCalendar to also sync mobile display
+  window._origUpdateCalendar = updateCalendar;
+
+  // Initial sync
+  syncMobileMonth();
+
+  // Observe month display changes to keep mobile in sync
+  const monthDisplayEl = document.getElementById('month-display');
+  if (monthDisplayEl) {
+    new MutationObserver(() => syncMobileMonth()).observe(monthDisplayEl, { childList: true, subtree: true, characterData: true });
+  }
+
+  // Mobile prev/next/today
+  document.getElementById('mobile-prev-btn').addEventListener('click', () => {
+    document.getElementById('prev-btn').click();
+  });
+  document.getElementById('mobile-next-btn').addEventListener('click', () => {
+    document.getElementById('next-btn').click();
+  });
+  document.getElementById('mobile-today-btn').addEventListener('click', () => {
+    document.getElementById('today-btn').click();
+  });
+
+  // Drawer helpers
+  const drawers = ['mobile-farms-drawer', 'mobile-review-drawer', 'mobile-settings-drawer'];
+  function closeAllDrawers() {
+    drawers.forEach(id => { document.getElementById(id).style.display = 'none'; });
+    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  }
+  function toggleDrawer(drawerId, btnEl) {
+    const drawer = document.getElementById(drawerId);
+    const isOpen = drawer.style.display !== 'none';
+    closeAllDrawers();
+    if (!isOpen) {
+      drawer.style.display = 'block';
+      if (btnEl) btnEl.classList.add('active');
+    }
+  }
+
+  // Farms drawer
+  document.getElementById('mobile-farms-btn').addEventListener('click', function() {
+    // Sync farm list into mobile drawer
+    const mobileList = document.getElementById('mobile-calendar-list');
+    const desktopList = document.getElementById('calendar-list');
+    if (mobileList && desktopList) mobileList.innerHTML = desktopList.innerHTML;
+    // Wire up farm buttons in mobile list
+    mobileList.querySelectorAll('.cal-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        currentCalendarId = btn.dataset.calId;
+        currentCalendar = calendars.find(c => c.id === currentCalendarId) || null;
+        localStorage.setItem('momenta_calendar_id', currentCalendarId);
+        await renderCalendarSwitcher();
+        updateFarmButton();
+        subscribeToCalendarChanges();
+        updateCalendar();
+        closeAllDrawers();
+      });
+    });
+    // Sync manage farm button visibility
+    const mobileMngBtn = document.getElementById('mobile-manage-farm-btn');
+    if (mobileMngBtn) {
+      mobileMngBtn.style.display = (currentCalendar && currentCalendar.type === 'farm' && currentCalendar.owner_id === user.id) ? 'block' : 'none';
+    }
+    toggleDrawer('mobile-farms-drawer', this);
+  });
+  document.getElementById('close-farms-drawer').addEventListener('click', closeAllDrawers);
+
+  // Mobile farm action buttons → delegate to desktop equivalents
+  document.getElementById('mobile-create-farm-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('create-farm-btn').click();
+  });
+  document.getElementById('mobile-join-farm-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('join-farm-btn').click();
+  });
+  document.getElementById('mobile-manage-farm-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('manage-farm-btn').click();
+  });
+  document.getElementById('mobile-logout-btn').addEventListener('click', () => {
+    document.getElementById('logout-btn').click();
+  });
+
+  // Keep mobile email in sync
+  const mobileEmail = document.getElementById('mobile-sidebar-email');
+  const desktopEmail = document.getElementById('sidebar-email');
+  if (mobileEmail && desktopEmail) {
+    mobileEmail.textContent = desktopEmail.textContent;
+    new MutationObserver(() => { mobileEmail.textContent = desktopEmail.textContent; })
+      .observe(desktopEmail, { childList: true, subtree: true, characterData: true });
+  }
+
+  // Add Batch button
+  document.getElementById('mobile-add-batch-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('add-batch-btn').click();
+  });
+
+  // Add Event button
+  document.getElementById('mobile-add-event-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('add-custom-event-btn').click();
+  });
+
+  // Review drawer
+  document.getElementById('mobile-review-btn').addEventListener('click', function() {
+    toggleDrawer('mobile-review-drawer', this);
+  });
+  document.getElementById('close-review-drawer').addEventListener('click', closeAllDrawers);
+  document.getElementById('mobile-all-events-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('all-events-btn').click();
+  });
+  document.getElementById('mobile-year-view-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('year-view-btn').click();
+  });
+
+  // Settings drawer
+  document.getElementById('mobile-settings-btn').addEventListener('click', function() {
+    toggleDrawer('mobile-settings-drawer', this);
+  });
+  document.getElementById('close-settings-drawer').addEventListener('click', closeAllDrawers);
+  document.getElementById('mobile-production-settings-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('settings-btn').click();
+  });
+  document.getElementById('mobile-custom-events-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('custom-events-settings-btn').click();
+  });
+
+  // Close drawers when tapping outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.mobile-drawer') && !e.target.closest('.mobile-nav-btn')) {
+      closeAllDrawers();
+    }
+  });
+})();
 
 })();
