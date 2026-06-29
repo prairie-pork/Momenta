@@ -1093,144 +1093,266 @@ button:hover {
 }
 
 /* =============================================
+   MOBILE TOP BAR & BOTTOM NAV (hidden on desktop)
+   ============================================= */
+
+.mobile-header {
+  display: none;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+.mobile-drawer {
+  display: none;
+}
+
+/* =============================================
    MOBILE RESPONSIVE
    ============================================= */
 
 @media (max-width: 900px) {
-  .app-layout {
-    flex-direction: column;
-    height: auto;
-  }
+
+  /* Hide desktop sidebar entirely */
   .sidebar {
-    width: 100%;
-    min-width: 0;
-    border-right: none;
-    border-bottom: 2px solid #190800;
-    padding: 10px 14px;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px 10px;
-    overflow-y: visible;
+    display: none !important;
   }
-  .sidebar-brand {
-    font-size: 1.3em;
-    padding-bottom: 0;
-    border-bottom: none;
-    margin-bottom: 0;
-    margin-right: 10px;
-  }
-  .sidebar-group {
-    padding: 0;
-    border-bottom: none;
-  }
-  .sidebar-group-title {
-    display: none;
-  }
-  .sidebar-email {
-    font-size: 0.7em;
-  }
-  .sidebar-btn {
-    padding: 4px 8px;
-    font-size: 0.75em;
-    margin-bottom: 0;
-    display: inline-block;
-    width: auto;
-  }
-  .sidebar-btn-sm {
-    padding: 4px 8px;
-    font-size: 0.7em;
-  }
-  .sidebar-cal-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    margin-bottom: 0;
-  }
-  .cal-btn {
-    width: auto;
-    padding: 4px 22px 4px 24px;
-    font-size: 0.7em;
-  }
-  .cal-btn-icon {
-    left: 7px;
-  }
-  .cal-btn-icon svg {
-    width: 12px;
-    height: 12px;
-  }
-  .sidebar-month-nav {
+
+  /* Show mobile header */
+  .mobile-header {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    background-color: #190800;
+    color: #ffe4c4;
+    padding: 0 14px;
+    height: 52px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-sizing: border-box;
   }
-  .sidebar-month-nav .month-nav-card {
-    margin-bottom: 0;
-    width: auto;
+
+  .mobile-brand {
+    font-size: 1.25em;
+    font-weight: bold;
+    color: #ffe4c4;
+    letter-spacing: 0.5px;
+    min-width: 80px;
   }
-  .month-nav-arrow {
-    width: 28px;
-    font-size: 1.2em;
+
+  .mobile-month-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
   }
-  .month-nav-label {
-    font-size: 0.8em;
-    padding: 6px 8px;
+
+  .mobile-nav-arrow {
+    background: transparent;
+    border: none;
+    color: #ffe4c4;
+    font-size: 1.6em;
+    padding: 0 8px;
+    cursor: pointer;
+    line-height: 1;
+    border-radius: 6px;
   }
-  .month-nav-today {
-    width: auto;
-    font-size: 0.7em;
+  .mobile-nav-arrow:hover {
+    background: rgba(255,228,196,0.15);
+  }
+
+  .mobile-month-label {
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #ffe4c4;
+    min-width: 110px;
+    text-align: center;
+  }
+
+  .mobile-today-btn {
+    background: rgba(255,228,196,0.15);
+    border: 1px solid rgba(255,228,196,0.35);
+    color: #ffe4c4;
+    font-size: 0.75em;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .mobile-today-btn:hover {
+    background: rgba(255,228,196,0.28);
+  }
+
+  /* Show mobile bottom nav */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 62px;
+    background-color: #190800;
+    border-top: 1px solid #3a1800;
+    z-index: 100;
+    align-items: stretch;
+  }
+
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: #b89a80;
+    font-size: 0.6em;
+    padding: 6px 0;
+    cursor: pointer;
+    border-radius: 0;
+    transition: color 0.15s, background 0.15s;
+  }
+  .mobile-nav-btn:hover,
+  .mobile-nav-btn.active {
+    color: #ffe4c4;
+    background: rgba(255,228,196,0.08);
+  }
+  .mobile-nav-btn svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  /* Drawers (slide up from bottom) */
+  .mobile-drawer {
+    display: block;
+    position: fixed;
+    bottom: 62px;
+    left: 0;
+    right: 0;
+    background: #fff8f0;
+    border-top: 2px solid #190800;
+    border-radius: 14px 14px 0 0;
+    z-index: 99;
+    box-shadow: 0 -4px 24px rgba(25,8,0,0.18);
+    animation: slideUp 0.22s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .mobile-drawer-content {
+    padding: 16px 18px 18px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #190800;
+  }
+
+  .mobile-drawer-close {
+    background: transparent;
+    border: none;
+    font-size: 1.1em;
+    color: #887a6a;
+    cursor: pointer;
     padding: 4px 8px;
+    border-radius: 6px;
   }
-  .sidebar-farm-actions .sidebar-btn {
-    width: auto;
-    font-size: 0.7em;
-    padding: 4px 8px;
-    margin-bottom: 0;
+  .mobile-drawer-close:hover {
+    background: #f0e8dc;
   }
+
+  /* App layout on mobile: full height, room for top bar + bottom nav */
+  .app-layout {
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
   .calendar-main {
-    padding: 8px 8px;
+    flex: 1;
+    padding: 10px 8px;
+    overflow-y: auto;
+    padding-bottom: 72px;
   }
+
+  .calendar-header {
+    margin: 0 0 10px;
+    font-size: 1.2em;
+    display: none;
+  }
+
   #calendar-grid {
     padding: 0;
   }
+
   .day-cell {
-    height: 90px;
+    height: 88px;
     padding: 5px;
-    font-size: 0.9em;
+    font-size: 0.88em;
   }
+
   .notes-container {
-    height: 50px;
+    height: 46px;
     gap: 3px;
   }
+
   .notes-column {
-    font-size: 0.65em;
+    font-size: 0.62em;
   }
+
   .event-badge {
-    font-size: 0.6em;
+    font-size: 0.58em;
     padding: 1px 3px;
   }
+
   .today-cell .day-number {
     width: 1.5em;
     height: 1.5em;
     font-size: 0.85em;
   }
+
+  .modal-content {
+    max-height: 80vh;
+    width: 95%;
+    padding: 20px 18px;
+  }
 }
 
 @media (max-width: 480px) {
-  #calendar-grid {
-    padding: 0;
-  }
   .day-cell {
-    height: 80px;
+    height: 76px;
     padding: 3px;
   }
+
   .day-number {
-    font-size: 0.75em;
+    font-size: 0.72em;
     margin-bottom: 2px;
   }
+
   .notes-container {
-    height: 40px;
+    height: 36px;
   }
+
   .event-labels {
-    margin-bottom: 3px;
+    margin-bottom: 2px;
+  }
+
+  .mobile-month-label {
+    min-width: 90px;
+    font-size: 0.85em;
   }
 }
 
