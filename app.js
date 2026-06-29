@@ -1275,7 +1275,7 @@ async function renderYearView(year) {
 
       if (dayEvents && dayEvents.length > 0) {
         cls += ' has-event';
-        const backgroundEvent = importantEventForBackground(dayEvents);
+        const backgroundEvent = importantEventForBackground(dayEvents) || dayEvents[0];
         if (backgroundEvent) {
           const backgroundStyle = eventStyle(backgroundEvent.event_type);
           bgStyle = 'background:' + backgroundStyle.bg;
