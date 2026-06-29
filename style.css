@@ -386,20 +386,26 @@ button:hover {
   font-size: 0.9em;
 }
 
-.form-group input {
+.form-group input,
+.form-group select,
+.custom-type-form input {
   width: 100%;
   padding: 10px 12px;
   font-size: 1em;
-  border: 1px solid #ccc;
+  border: 1px solid #c7b299;
   border-radius: 6px;
-  background-color: white;
+  background-color: #fffdf8;
   box-sizing: border-box;
   transition: border-color 0.2s;
+  color: #190800;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus,
+.custom-type-form input:focus {
   outline: none;
   border-color: #190800;
+  box-shadow: 0 0 0 3px rgba(25, 8, 0, 0.08);
 }
 
 .big-date-input {
@@ -467,7 +473,8 @@ button:hover {
 
 .event-labels {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
   margin-bottom: 8px;
   width: 100%;
@@ -480,6 +487,10 @@ button:hover {
   font-weight: bold;
   white-space: nowrap;
   color: white;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
 .event-badge.breed     { background-color: #2d7a2d; }
@@ -537,6 +548,18 @@ button:hover {
 
 .modal-buttons button {
   flex: 1;
+}
+
+.custom-events-modal {
+  max-width: 520px;
+}
+
+.farm-modal-name {
+  font-size: 1.55em !important;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 20px !important;
+  color: #190800;
 }
 
 .btn-secondary {
@@ -661,6 +684,101 @@ button:hover {
   font-size: 0.9em;
 }
 
+.custom-type-form {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 112px auto auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.custom-type-form input {
+  margin: 0;
+}
+
+.custom-days-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6c5b4a;
+  font-size: 0.82em;
+  font-weight: 700;
+}
+
+.custom-days-field input {
+  flex: 0 0 58px;
+  width: 58px;
+  min-width: 0;
+}
+
+.color-swatch-row {
+  display: grid;
+  grid-template-columns: repeat(6, 24px);
+  gap: 6px;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #fff8f0;
+  box-shadow: 0 0 0 1px #c7b299;
+}
+
+.color-swatch.selected {
+  box-shadow: 0 0 0 2px #190800;
+}
+
+.custom-type-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid #eadfce;
+  border-radius: 6px;
+  background-color: #fffdf8;
+  margin-bottom: 6px;
+  font-size: 0.95em;
+}
+
+.custom-type-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-type-days {
+  color: #6c5b4a;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.custom-type-row button {
+  font-size: 0.75em;
+  padding: 3px 10px;
+}
+
+.custom-type-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .custom-type-form {
+    grid-template-columns: 1fr;
+  }
+
+  .color-swatch-row {
+    grid-template-columns: repeat(6, 24px);
+  }
+}
+
 /* =============================================
    YEAR VIEW - MINI CALENDARS
    ============================================= */
@@ -669,6 +787,7 @@ button:hover {
   max-width: 1400px !important;
   width: 97% !important;
   max-height: 92vh;
+  background: white !important;
 }
 
 .year-view-header {
@@ -708,6 +827,7 @@ button:hover {
   max-height: 68vh;
   overflow-y: auto;
   padding: 4px 0;
+  background: white;
 }
 
 .year-mini-calendars {
@@ -715,6 +835,7 @@ button:hover {
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   padding: 8px 0;
+  background: white;
 }
 
 @media (max-width: 1100px) {
@@ -733,7 +854,7 @@ button:hover {
   border: 1px solid #d4c4b0;
   border-radius: 6px;
   overflow: hidden;
-  background: #fffdf8;
+  background: #fff8f0;
 }
 
 .mini-month-header {
@@ -817,6 +938,11 @@ button:hover {
    ============================================= */
 
 @media print {
+  @page {
+    size: landscape;
+    margin: 0.35in;
+  }
+
   body {
     background: white !important;
     margin: 0 !important;
@@ -850,10 +976,10 @@ button:hover {
   }
   .modal-content.year-view-modal {
     max-width: 100% !important;
-    width: 100vw !important;
+    width: 100% !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 15px !important;
+    padding: 0 !important;
     overflow: visible !important;
     margin: 0 !important;
     border-radius: 0 !important;
@@ -863,25 +989,47 @@ button:hover {
     display: none !important;
   }
   .year-view-header {
-    margin-bottom: 20px !important;
+    margin-bottom: 10px !important;
+  }
+  .year-view-header h2 {
+    font-size: 18pt !important;
+  }
+  #year-view-year {
+    font-size: 16pt !important;
   }
   #year-view-content {
     max-height: none !important;
     overflow: visible !important;
     padding: 0 !important;
+    background: white !important;
   }
   .year-mini-calendars {
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 16px !important;
+    gap: 12px !important;
     padding: 0 !important;
+    background: white !important;
   }
   .mini-month {
     page-break-inside: avoid;
     border: 1px solid #ccc !important;
+    background: #fff8f0 !important;
+  }
+  .mini-month-header {
+    padding: 7px !important;
+    font-size: 11pt !important;
+  }
+  .mini-day-name {
+    padding: 4px 0 !important;
+    font-size: 8pt !important;
   }
   .mini-day-cell {
-    min-height: 28px !important;
-    padding: 5px 0 !important;
+    min-height: 25px !important;
+    padding: 4px 0 !important;
+    font-size: 9pt !important;
+  }
+  .year-view-legend {
+    margin-top: 8px !important;
+    padding-top: 8px !important;
   }
   ::-webkit-scrollbar {
     display: none;

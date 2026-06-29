@@ -51,9 +51,20 @@ CREATE TABLE IF NOT EXISTS batch_configs (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS custom_event_types (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  calendar_id UUID REFERENCES calendars(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  color TEXT NOT NULL,
+  duration_days INT NOT NULL DEFAULT 1 CHECK (duration_days BETWEEN 1 AND 30),
+  created_by UUID REFERENCES auth.users(id) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE calendar_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE batch_configs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE custom_event_types ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view their own config" ON batch_configs;
 DROP POLICY IF EXISTS "Users can insert their own config" ON batch_configs;
@@ -71,6 +82,11 @@ CREATE POLICY "batch_configs_insert" ON batch_configs
 CREATE POLICY "batch_configs_update" ON batch_configs
   FOR UPDATE USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "custom_event_types_select" ON custom_event_types;
+DROP POLICY IF EXISTS "custom_event_types_insert" ON custom_event_types;
+DROP POLICY IF EXISTS "custom_event_types_update" ON custom_event_types;
+DROP POLICY IF EXISTS "custom_event_types_delete" ON custom_event_types;
 
 -- Drop old policies in case they exist from a prior run
 DROP POLICY IF EXISTS "calendars_owner_select" ON calendars;
@@ -254,6 +270,28 @@ GRANT EXECUTE ON FUNCTION redeem_invite(TEXT) TO authenticated;
 ALTER TABLE events ADD COLUMN IF NOT EXISTS calendar_id UUID REFERENCES calendars(id) ON DELETE CASCADE;
 ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS calendar_id UUID REFERENCES calendars(id) ON DELETE CASCADE;
 
+-- Custom event types are account-level now. They can be used on any farm and
+-- should survive when a farm is deleted.
+ALTER TABLE custom_event_types ALTER COLUMN calendar_id DROP NOT NULL;
+ALTER TABLE custom_event_types ADD COLUMN IF NOT EXISTS duration_days INT NOT NULL DEFAULT 1;
+ALTER TABLE custom_event_types DROP CONSTRAINT IF EXISTS custom_event_types_duration_days_check;
+ALTER TABLE custom_event_types ADD CONSTRAINT custom_event_types_duration_days_check CHECK (duration_days BETWEEN 1 AND 30);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.table_constraints
+    WHERE constraint_name = 'custom_event_types_calendar_id_fkey'
+      AND table_name = 'custom_event_types'
+  ) THEN
+    ALTER TABLE custom_event_types
+      DROP CONSTRAINT custom_event_types_calendar_id_fkey,
+      ADD CONSTRAINT custom_event_types_calendar_id_fkey
+        FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE SET NULL;
+  END IF;
+END;
+$$;
+
 -- Ensure existing FK constraints also cascade
 DO $$
 BEGIN
@@ -280,6 +318,25 @@ AS $$
   SELECT EXISTS (SELECT 1 FROM calendars WHERE id = cal_id AND owner_id = uid)
     OR EXISTS (SELECT 1 FROM calendar_members WHERE calendar_id = cal_id AND user_id = uid);
 $$;
+
+CREATE POLICY "custom_event_types_select" ON custom_event_types FOR SELECT
+  USING (created_by = auth.uid());
+
+CREATE POLICY "custom_event_types_insert" ON custom_event_types FOR INSERT
+  WITH CHECK (
+    created_by = auth.uid()
+    AND (calendar_id IS NULL OR can_access_calendar(calendar_id, auth.uid()))
+  );
+
+CREATE POLICY "custom_event_types_update" ON custom_event_types FOR UPDATE
+  USING (created_by = auth.uid())
+  WITH CHECK (
+    created_by = auth.uid()
+    AND (calendar_id IS NULL OR can_access_calendar(calendar_id, auth.uid()))
+  );
+
+CREATE POLICY "custom_event_types_delete" ON custom_event_types FOR DELETE
+  USING (created_by = auth.uid());
 
 -- 5. Update RLS on events to allow farm members
 DROP POLICY IF EXISTS "Users can view their own events" ON events;
@@ -388,6 +445,12 @@ BEGIN
     WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'calendar_members'
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE calendar_members;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'custom_event_types'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE custom_event_types;
   END IF;
 END;
 $$;

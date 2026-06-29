@@ -126,6 +126,13 @@ function subscribeToCalendarChanges() {
       }
     )
     .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'custom_event_types', filter: 'created_by=eq.' + user.id },
+      async () => {
+        await loadCustomEventTypes();
+        await updateCalendar();
+      }
+    )
+    .on('postgres_changes',
       { event: '*', schema: 'public', table: 'calendar_members', filter: 'user_id=eq.' + user.id },
       async () => {
         await loadCalendars();
@@ -228,6 +235,50 @@ const EVENT_STYLES = {
   weaning:   { bg: 'rgba(200, 50, 50, 0.18)',  label: 'Wean',  badge: '#aa2222' }
 };
 
+const CUSTOM_EVENT_COLORS = [
+  '#0f766e', '#0891b2', '#ea580c', '#db2777',
+  '#475569', '#7c2d12', '#14b8a6', '#f97316',
+  '#be123c', '#334155', '#0369a1', '#a16207'
+];
+let customEventTypes = [];
+let selectedCustomColor = CUSTOM_EVENT_COLORS[0];
+
+function eventStyle(type) {
+  if (EVENT_STYLES[type]) return EVENT_STYLES[type];
+  if (type && type.startsWith('custom:')) {
+    const id = type.slice(7);
+    const custom = customEventTypes.find(t => t.id === id);
+    if (custom) return { label: custom.name, badge: custom.color, bg: hexToRgba(custom.color, 0.18) };
+  }
+  return { label: 'Event', badge: '#64748b', bg: 'rgba(100, 116, 139, 0.16)' };
+}
+
+function isCustomEvent(evt) {
+  return !!(evt && evt.event_type && evt.event_type.startsWith('custom:'));
+}
+
+function sortEventsForDisplay(events) {
+  return [...(events || [])].sort((a, b) => {
+    const aCustom = isCustomEvent(a);
+    const bCustom = isCustomEvent(b);
+    if (aCustom !== bCustom) return aCustom ? 1 : -1;
+    return String(a.start_date || '').localeCompare(String(b.start_date || ''));
+  });
+}
+
+function importantEventForBackground(events) {
+  return (events || []).find(evt => !isCustomEvent(evt));
+}
+
+function hexToRgba(hex, alpha) {
+  const clean = String(hex || '').replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return 'rgba(100, 116, 139, ' + alpha + ')';
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+}
+
 // =============================================
 // Helper: format a Date as YYYY-MM-DD
 // =============================================
@@ -302,6 +353,17 @@ async function fetchBatchEvents(year, month) {
     .lte('start_date', monthEnd);
   if (error) { console.error('Error fetching events:', error); return []; }
   return (data || []).filter(evt => (evt.end_date || evt.start_date) >= monthStart);
+}
+
+async function loadCustomEventTypes() {
+  const { data, error } = await supabase
+    .from('custom_event_types')
+    .select('*')
+    .eq('created_by', user.id)
+    .order('name', { ascending: true });
+  if (error) { console.error('Error loading custom event types:', error); customEventTypes = []; return []; }
+  customEventTypes = data || [];
+  return customEventTypes;
 }
 
 // Build a map: { '2026-06-02': [event, ...], ... }
@@ -438,6 +500,7 @@ async function updateCalendar() {
   monthDisplay.textContent = headerText;
   const calendarHeader = document.getElementById('calendar-header');
   if (calendarHeader) calendarHeader.textContent = headerText;
+  await loadCustomEventTypes();
 
   for (let i = 0; i < dayCells.length; i++) {
     dayCells[i].innerHTML = '';
@@ -477,22 +540,25 @@ async function updateCalendar() {
 
     // Events on this day?
     const dateKey = currentYear + '-' + String(currentMonthIndex + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-    const dayEvents = eventsMap[dateKey];
+    const dayEvents = sortEventsForDisplay(eventsMap[dateKey]);
 
     if (dayEvents && dayEvents.length > 0) {
-      const firstStyle = EVENT_STYLES[dayEvents[0].event_type];
-      if (firstStyle) {
-        cell.style.background = firstStyle.bg;
+      const backgroundEvent = importantEventForBackground(dayEvents);
+      if (backgroundEvent) {
+        const backgroundStyle = eventStyle(backgroundEvent.event_type);
+        cell.style.background = backgroundStyle.bg;
       }
 
       const labelsDiv = document.createElement('div');
       labelsDiv.classList.add('event-labels');
       for (const evt of dayEvents) {
-        const style = EVENT_STYLES[evt.event_type];
-        if (!style) continue;
+        const style = eventStyle(evt.event_type);
         const badge = document.createElement('span');
         badge.classList.add('event-badge', evt.event_type);
-        badge.textContent = style.label + ' ' + evt.batch_name + ' ' + evt.batch_number;
+        badge.style.backgroundColor = style.badge;
+        badge.textContent = evt.event_type.startsWith('custom:')
+          ? style.label
+          : style.label + ' ' + evt.batch_name + ' ' + evt.batch_number;
         labelsDiv.appendChild(badge);
       }
       cell.appendChild(labelsDiv);
@@ -680,6 +746,108 @@ document.getElementById('cancel-batch').addEventListener('click', () => {
   hideModal('add-batch-modal');
 });
 
+function renderColorSwatches() {
+  const container = document.getElementById('custom-type-colors');
+  if (!container) return;
+  container.innerHTML = CUSTOM_EVENT_COLORS.map(color =>
+    '<button type="button" class="color-swatch' + (color === selectedCustomColor ? ' selected' : '') + '" data-color="' + color + '" style="background:' + color + '"></button>'
+  ).join('');
+  container.querySelectorAll('.color-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedCustomColor = btn.dataset.color;
+      renderColorSwatches();
+    });
+  });
+}
+
+async function populateCustomEventTypeSelect() {
+  await loadCustomEventTypes();
+  const select = document.getElementById('custom-event-type');
+  if (!select) return;
+  if (customEventTypes.length === 0) {
+    select.innerHTML = '<option value="">Create a custom event in Settings first</option>';
+    return;
+  }
+  select.innerHTML = customEventTypes.map(t => {
+    const days = Number(t.duration_days || 1);
+    const label = t.name + ' - ' + days + ' day' + (days === 1 ? '' : 's');
+    return '<option value="' + escapeAttr(t.id) + '">' + escapeHtml(label) + '</option>';
+  }).join('');
+}
+
+document.getElementById('add-custom-event-btn').addEventListener('click', async () => {
+  const today = new Date();
+  document.getElementById('custom-event-date').value = fmtDate(today);
+  document.getElementById('custom-event-message').className = 'auth-message';
+  document.getElementById('custom-event-message').textContent = '';
+  await populateCustomEventTypeSelect();
+  showModal('custom-event-modal');
+});
+
+document.getElementById('custom-events-settings-btn').addEventListener('click', async () => {
+  document.getElementById('custom-type-name').value = '';
+  document.getElementById('custom-type-duration').value = 1;
+  document.getElementById('custom-type-message').className = 'auth-message';
+  document.getElementById('custom-type-message').textContent = '';
+  renderColorSwatches();
+  await loadCustomEventTypes();
+  renderCustomEventTypes();
+  showModal('custom-events-settings-modal');
+});
+
+document.getElementById('close-custom-events-settings').addEventListener('click', () => {
+  hideModal('custom-events-settings-modal');
+});
+
+document.getElementById('cancel-custom-event').addEventListener('click', () => {
+  hideModal('custom-event-modal');
+});
+
+document.getElementById('custom-event-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('custom-event-message');
+  const btn = document.getElementById('save-custom-event-btn');
+  const typeId = document.getElementById('custom-event-type').value;
+  const date = document.getElementById('custom-event-date').value;
+
+  if (!typeId || !date) {
+    msg.className = 'auth-message error';
+    msg.textContent = 'Choose a custom event and start date.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+  try {
+    if (!(await ensureActiveCalendar())) throw new Error('Please create or select a farm first.');
+    const custom = customEventTypes.find(t => t.id === typeId);
+    if (!custom) throw new Error('Choose a saved custom event.');
+    const days = Math.max(1, parseInt(custom.duration_days || 1));
+    const end = new Date(date + 'T00:00:00');
+    end.setDate(end.getDate() + days - 1);
+    const { error } = await supabase.from('events').insert({
+      user_id: user.id,
+      batch_name: custom.name,
+      batch_number: 0,
+      event_type: 'custom:' + typeId,
+      start_date: date,
+      end_date: days > 1 ? fmtDate(end) : null,
+      calendar_id: currentCalendarId
+    });
+    if (error) throw error;
+    msg.className = 'auth-message success';
+    msg.textContent = 'Event added!';
+    await updateCalendar();
+    setTimeout(() => hideModal('custom-event-modal'), 900);
+  } catch (err) {
+    msg.className = 'auth-message error';
+    msg.textContent = err.message || 'Failed to add event.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add Event';
+  }
+});
+
 document.getElementById('add-batch-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('batch-message');
@@ -797,6 +965,7 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
     container.innerHTML = '<p class="empty-events">Create or select a farm to view events.</p>';
     return;
   }
+  await loadCustomEventTypes();
 
   const { data: allEvents, error } = await supabase
     .from('events')
@@ -817,9 +986,9 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
   // Group by batch
   const groups = {};
   for (const evt of allEvents) {
-    const key = evt.batch_name + '|' + evt.batch_number;
+    const key = evt.event_type.startsWith('custom:') ? 'event|' + evt.id : evt.batch_name + '|' + evt.batch_number;
     if (!groups[key]) {
-      groups[key] = { batchName: evt.batch_name, batchNumber: evt.batch_number, events: [] };
+      groups[key] = { batchName: evt.batch_name, batchNumber: evt.batch_number, events: [], isCustom: evt.event_type.startsWith('custom:') };
     }
     groups[key].events.push(evt);
   }
@@ -827,29 +996,31 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
   let html = '';
   for (const key of Object.keys(groups).sort()) {
     const g = groups[key];
-    const breedEvt = g.events.find(e => e.event_type === 'breed');
+    const breedEvt = g.events.find(e => e.event_type === 'breed') || g.events[0];
     const breedDate = breedEvt ? breedEvt.start_date : '?';
     const batchLabel = escapeHtml(g.batchName + ' ' + g.batchNumber);
     const batchNameAttr = escapeAttr(g.batchName);
     const batchNumberAttr = escapeAttr(g.batchNumber);
 
     html += '<div class="batch-group">';
-    html += '<h3>' + batchLabel + ' <span style="font-weight:normal;font-size:0.85em;color:#666;">breed ' + escapeHtml(breedDate) + '</span></h3>';
-    html += '<button class="delete-btn" data-action="delete-batch" data-name="' + batchNameAttr + '" data-number="' + batchNumberAttr + '">Delete Batch</button>';
+    html += '<h3>' + (g.isCustom ? escapeHtml(g.batchName) : batchLabel) + ' <span style="font-weight:normal;font-size:0.85em;color:#666;">' + (g.isCustom ? 'date ' : 'breed ') + escapeHtml(breedDate) + '</span></h3>';
+    html += g.isCustom
+      ? '<button class="delete-btn" data-action="delete-event" data-id="' + escapeAttr(g.events[0].id) + '">Delete Event</button>'
+      : '<button class="delete-btn" data-action="delete-batch" data-name="' + batchNameAttr + '" data-number="' + batchNumberAttr + '">Delete Batch</button>';
 
     // Events list
     for (const evt of g.events) {
-      const style = EVENT_STYLES[evt.event_type];
-      if (!style) continue;
+      const style = eventStyle(evt.event_type);
       const dateRange = evt.end_date && evt.end_date !== evt.start_date
         ? evt.start_date + ' - ' + evt.end_date
         : evt.start_date;
       html += '<div class="event-row">';
       html += '<span class="event-type-dot" style="background:' + style.badge + '"></span>';
       html += '<span class="event-type-label" style="color:' + style.badge + '">' + style.label + '</span>';
-      html += '<span class="event-batch-label">' + batchLabel + '</span>';
+      html += '<span class="event-batch-label">' + (g.isCustom ? '' : batchLabel) + '</span>';
       html += '<span class="event-date" style="font-size:1.15em;font-weight:bold;">' + escapeHtml(dateRange) + '</span>';
-      html += '<button data-action="reschedule" data-id="' + escapeAttr(evt.id) + '" data-type="' + escapeAttr(evt.event_type) + '" data-start="' + escapeAttr(evt.start_date) + '" data-end="' + escapeAttr(evt.end_date || '') + '" data-batch="' + escapeAttr(g.batchName + ' ' + g.batchNumber) + '" data-batch-name="' + batchNameAttr + '" data-batch-number="' + batchNumberAttr + '">Reschedule</button>';
+      const rescheduleLabel = g.isCustom ? g.batchName : g.batchName + ' ' + g.batchNumber;
+      html += '<button data-action="reschedule" data-id="' + escapeAttr(evt.id) + '" data-type="' + escapeAttr(evt.event_type) + '" data-start="' + escapeAttr(evt.start_date) + '" data-end="' + escapeAttr(evt.end_date || '') + '" data-batch="' + escapeAttr(rescheduleLabel) + '" data-batch-name="' + batchNameAttr + '" data-batch-number="' + batchNumberAttr + '">Reschedule</button>';
       html += '</div>';
     }
 
@@ -872,9 +1043,20 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
     });
   });
 
+  container.querySelectorAll('[data-action="delete-event"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this event?')) return;
+      const { error: delErr } = await supabase.from('events').delete()
+        .eq('id', btn.dataset.id).eq('calendar_id', currentCalendarId);
+      if (delErr) { alert('Error: ' + delErr.message); return; }
+      await updateCalendar();
+      btn.closest('.batch-group').remove();
+    });
+  });
+
   container.querySelectorAll('[data-action="reschedule"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const typeLabel = (EVENT_STYLES[btn.dataset.type] || {}).label || btn.dataset.type;
+      const typeLabel = eventStyle(btn.dataset.type).label || btn.dataset.type;
       document.getElementById('reschedule-title').textContent = 'Reschedule ' + typeLabel;
       document.getElementById('reschedule-note').textContent = 'Updating ' + btn.dataset.batch + ' - ' + typeLabel;
       document.getElementById('reschedule-new-date').value = btn.dataset.start;
@@ -925,8 +1107,8 @@ function checkEventOrder(eventType, newDate, newEnd, batchEvents) {
     const otherStart = evt.start_date;
     const otherEnd = evt.end_date || evt.start_date;
     const selfEnd = newEnd || newDate;
-    const selfLabel = (EVENT_STYLES[eventType] || {}).label || eventType;
-    const otherLabel = (EVENT_STYLES[evt.event_type] || {}).label || evt.event_type;
+    const selfLabel = eventStyle(eventType).label || eventType;
+    const otherLabel = eventStyle(evt.event_type).label || evt.event_type;
 
     if (evtIdx < idx && newDate <= otherEnd) {
       console.log('  BLOCKED: ' + selfLabel + ' (' + newDate + ') must be after ' + otherLabel + ' (ends ' + otherEnd + ')');
@@ -966,21 +1148,23 @@ document.getElementById('reschedule-form').addEventListener('submit', async (e) 
       throw new Error('Please create or select a farm before updating events.');
     }
 
-    const { data: batchEvents } = await supabase
-      .from('events')
-      .select('event_type, start_date, end_date')
-      .eq('batch_name', batchName)
-      .eq('batch_number', batchNumber)
-      .eq('calendar_id', currentCalendarId)
-      .neq('id', eventId);
+    if (!eventType.startsWith('custom:')) {
+      const { data: batchEvents } = await supabase
+        .from('events')
+        .select('event_type, start_date, end_date')
+        .eq('batch_name', batchName)
+        .eq('batch_number', batchNumber)
+        .eq('calendar_id', currentCalendarId)
+        .neq('id', eventId);
 
-    const conflict = checkEventOrder(eventType, newDate, newEndDate, batchEvents || []);
-    if (conflict) {
-      msg.className = 'auth-message error';
-      msg.textContent = conflict;
-      btn.disabled = false;
-      btn.textContent = 'Update';
-      return;
+      const conflict = checkEventOrder(eventType, newDate, newEndDate, batchEvents || []);
+      if (conflict) {
+        msg.className = 'auth-message error';
+        msg.textContent = conflict;
+        btn.disabled = false;
+        btn.textContent = 'Update';
+        return;
+      }
     }
 
     btn.textContent = 'Updating...';
@@ -1045,6 +1229,7 @@ async function renderYearView(year) {
     container.innerHTML = '<p class="empty-events">Create or select a farm to view events.</p>';
     return;
   }
+  await loadCustomEventTypes();
 
   const { data: events, error } = await supabase
     .from('events')
@@ -1083,20 +1268,23 @@ async function renderYearView(year) {
 
     for (let d = 1; d <= totalDays; d++) {
       const dateKey = year + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-      const dayEvents = eventsByDate[dateKey];
+      const dayEvents = sortEventsForDisplay(eventsByDate[dateKey]);
       let cls = 'mini-day-cell';
       let bgStyle = '';
       let dotsHtml = '';
 
       if (dayEvents && dayEvents.length > 0) {
         cls += ' has-event';
-        const firstStyle = EVENT_STYLES[dayEvents[0].event_type];
-        if (firstStyle) bgStyle = 'background:' + firstStyle.bg;
+        const backgroundEvent = importantEventForBackground(dayEvents);
+        if (backgroundEvent) {
+          const backgroundStyle = eventStyle(backgroundEvent.event_type);
+          bgStyle = 'background:' + backgroundStyle.bg;
+        }
         const seen = {};
         for (const evt of dayEvents) {
           if (!seen[evt.event_type]) {
             seen[evt.event_type] = true;
-            const s = EVENT_STYLES[evt.event_type];
+            const s = eventStyle(evt.event_type);
             if (s) dotsHtml += '<span class="mini-event-dot" style="background:' + s.badge + '"></span>';
           }
         }
@@ -1115,6 +1303,9 @@ async function renderYearView(year) {
   html += '<div class="year-view-legend">';
   for (const [type, style] of Object.entries(EVENT_STYLES)) {
     html += '<span class="legend-item"><span class="legend-dot" style="background:' + style.badge + '"></span>' + style.label + '</span>';
+  }
+  for (const custom of customEventTypes) {
+    html += '<span class="legend-item"><span class="legend-dot" style="background:' + escapeAttr(custom.color) + '"></span>' + escapeHtml(custom.name) + '</span>';
   }
   html += '</div>';
 
@@ -1150,7 +1341,7 @@ document.getElementById('print-year-view').addEventListener('click', () => {
 // =============================================
 document.getElementById('manage-farm-btn').addEventListener('click', async () => {
   if (!currentCalendar || currentCalendar.type !== 'farm' || currentCalendar.owner_id !== user.id) return;
-  document.getElementById('manage-farm-heading').textContent = currentCalendar.name.toUpperCase();
+  document.getElementById('manage-farm-name').textContent = currentCalendar.name;
   document.getElementById('invite-message').className = 'auth-message';
   document.getElementById('invite-message').textContent = '';
   await loadFarmData();
@@ -1170,6 +1361,19 @@ document.getElementById('delete-farm-btn').addEventListener('click', async () =>
   hideModal('manage-farm-modal');
   await loadCalendars();
   await updateCalendar();
+});
+
+document.getElementById('rename-farm-btn').addEventListener('click', async () => {
+  if (!currentCalendar || currentCalendar.owner_id !== user.id) return;
+  const name = prompt('Enter the new farm name:', currentCalendar.name);
+  if (!name || !name.trim()) return;
+  const { error } = await supabase
+    .from('calendars')
+    .update({ name: name.trim() })
+    .eq('id', currentCalendar.id);
+  if (error) { alert('Error renaming farm: ' + error.message); return; }
+  await loadCalendars();
+  document.getElementById('manage-farm-name').textContent = currentCalendar.name;
 });
 
 async function loadFarmData() {
@@ -1192,6 +1396,88 @@ async function loadFarmData() {
   renderFarmMembers(members || []);
   renderFarmInvites(invites || []);
 }
+
+function renderCustomEventTypes() {
+  const container = document.getElementById('custom-event-types-list');
+  if (!container) return;
+  if (customEventTypes.length === 0) {
+    container.innerHTML = '<p class="empty-events compact">No custom events yet.</p>';
+    return;
+  }
+  container.innerHTML = customEventTypes.map(t => {
+    const days = Number(t.duration_days || 1);
+    return '<div class="custom-type-row">'
+      + '<span class="custom-type-dot" style="background:' + escapeAttr(t.color) + '"></span>'
+      + '<span class="custom-type-name">' + escapeHtml(t.name) + '</span>'
+      + '<span class="custom-type-days">' + days + ' day' + (days === 1 ? '' : 's') + '</span>'
+      + '<button type="button" data-action="rename-custom-type" data-id="' + escapeAttr(t.id) + '">Rename</button>'
+      + '<button type="button" class="delete-btn" data-action="delete-custom-type" data-id="' + escapeAttr(t.id) + '">Delete</button>'
+      + '</div>';
+  }).join('');
+  container.querySelectorAll('[data-action="rename-custom-type"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const existing = customEventTypes.find(t => t.id === btn.dataset.id);
+      if (!existing) return;
+      const name = prompt('New name:', existing.name);
+      if (!name || !name.trim()) return;
+      const { error } = await supabase.from('custom_event_types').update({ name: name.trim() })
+        .eq('id', btn.dataset.id).eq('created_by', user.id);
+      if (error) { alert('Error: ' + error.message); return; }
+      await loadCustomEventTypes();
+      renderCustomEventTypes();
+      await populateCustomEventTypeSelect();
+      await updateCalendar();
+    });
+  });
+  container.querySelectorAll('[data-action="delete-custom-type"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this custom event? Existing scheduled events will stay on the calendar.')) return;
+      const { error } = await supabase.from('custom_event_types').delete()
+        .eq('id', btn.dataset.id).eq('created_by', user.id);
+      if (error) { alert('Error: ' + error.message); return; }
+      await loadCustomEventTypes();
+      renderCustomEventTypes();
+      await populateCustomEventTypeSelect();
+      await updateCalendar();
+    });
+  });
+}
+
+document.getElementById('add-custom-type-btn').addEventListener('click', async () => {
+  const msg = document.getElementById('custom-type-message');
+  const input = document.getElementById('custom-type-name');
+  const name = input.value.trim();
+  const duration = parseInt(document.getElementById('custom-type-duration').value);
+  if (!name) {
+    msg.className = 'auth-message error';
+    msg.textContent = 'Enter a name.';
+    return;
+  }
+  if (!duration || duration < 1 || duration > 30) {
+    msg.className = 'auth-message error';
+    msg.textContent = 'Days must be 1 to 30.';
+    return;
+  }
+  const { error } = await supabase.from('custom_event_types').insert({
+    calendar_id: currentCalendarId,
+    name,
+    color: selectedCustomColor,
+    duration_days: duration,
+    created_by: user.id
+  });
+  if (error) {
+    msg.className = 'auth-message error';
+    msg.textContent = error.message || 'Failed to add custom event.';
+    return;
+  }
+  input.value = '';
+  document.getElementById('custom-type-duration').value = 1;
+  msg.className = 'auth-message success';
+  msg.textContent = 'Custom event created.';
+  await loadCustomEventTypes();
+  renderCustomEventTypes();
+  await populateCustomEventTypeSelect();
+});
 
 async function renderFarmMembers(members) {
   const container = document.getElementById('farm-members-list');
