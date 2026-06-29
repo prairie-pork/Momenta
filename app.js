@@ -543,7 +543,7 @@ async function updateCalendar() {
     const dayEvents = sortEventsForDisplay(eventsMap[dateKey]);
 
     if (dayEvents && dayEvents.length > 0) {
-      const backgroundEvent = importantEventForBackground(dayEvents);
+      const backgroundEvent = importantEventForBackground(dayEvents) || dayEvents[0];
       if (backgroundEvent) {
         const backgroundStyle = eventStyle(backgroundEvent.event_type);
         cell.style.background = backgroundStyle.bg;
