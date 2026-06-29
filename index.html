@@ -35,7 +35,7 @@
       <div class="sidebar-group sidebar-farm-actions">
         <button id="create-farm-btn" class="sidebar-btn">+ New Farm</button>
         <button id="join-farm-btn" class="sidebar-btn">Join Farm</button>
-        <button id="manage-farm-btn" class="sidebar-btn" style="display:none;">Manage Farms</button>
+        <button id="manage-farm-btn" class="sidebar-btn" style="display:none;">Manage Farm</button>
       </div>
 
       <!-- Month Navigation -->
@@ -49,13 +49,25 @@
         <button id="today-btn" class="sidebar-btn month-nav-today" type="button">Today</button>
       </div>
 
-      <!-- Actions -->
+      <!-- Schedule Actions -->
       <div class="sidebar-group sidebar-actions">
-        <div class="sidebar-group-title">Actions</div>
+        <div class="sidebar-group-title">Schedule</div>
         <button id="add-batch-btn" class="sidebar-btn">+ Add Batch</button>
+        <button id="add-custom-event-btn" class="sidebar-btn">+ Add Event</button>
+      </div>
+
+      <!-- Review Actions -->
+      <div class="sidebar-group sidebar-actions">
+        <div class="sidebar-group-title">Review</div>
         <button id="all-events-btn" class="sidebar-btn">All Events</button>
         <button id="year-view-btn" class="sidebar-btn">Year View</button>
-        <button id="settings-btn" class="sidebar-btn">Settings</button>
+      </div>
+
+      <!-- Settings Actions -->
+      <div class="sidebar-group sidebar-actions">
+        <div class="sidebar-group-title">Settings</div>
+        <button id="settings-btn" class="sidebar-btn">Production Settings</button>
+        <button id="custom-events-settings-btn" class="sidebar-btn">Custom Events</button>
       </div>
 
     </aside>
@@ -144,6 +156,51 @@
     </div>
   </div>
 
+  <!-- Custom Event Modal -->
+  <div id="custom-event-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content custom-events-modal">
+      <h2>Add Event</h2>
+      <p class="modal-note">Choose a saved custom event and place it on the calendar.</p>
+      <form id="custom-event-form" novalidate>
+        <div class="form-group">
+          <label for="custom-event-type">Custom Event</label>
+          <select id="custom-event-type" required></select>
+        </div>
+        <div class="form-group">
+          <label for="custom-event-date">Start Date</label>
+          <input type="date" id="custom-event-date" class="big-date-input" required>
+        </div>
+        <div id="custom-event-message" class="auth-message"></div>
+        <div class="modal-buttons">
+          <button type="submit" id="save-custom-event-btn">Add Event</button>
+          <button type="button" id="cancel-custom-event" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Events Settings Modal -->
+  <div id="custom-events-settings-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content custom-events-modal">
+      <button type="button" id="add-custom-type-btn" class="create-btn-corner">Create</button>
+      <h2>Custom Events</h2>
+      <p class="modal-note">Create reusable events for your account.</p>
+      <div class="custom-type-form">
+        <input type="text" id="custom-type-name" placeholder="Processing">
+        <label class="custom-days-field" for="custom-type-duration">
+          <span>Days</span>
+          <input type="number" id="custom-type-duration" value="1" min="1" max="30">
+        </label>
+        <div id="custom-type-colors" class="color-swatch-row"></div>
+      </div>
+      <div id="custom-type-message" class="auth-message"></div>
+      <div id="custom-event-types-list"></div>
+      <div class="modal-buttons">
+        <button type="button" id="close-custom-events-settings" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Settings Modal -->
   <div id="settings-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
@@ -220,8 +277,10 @@
   <!-- Manage Farm Modal -->
   <div id="manage-farm-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content events-list-modal">
-      <h2 id="manage-farm-heading" style="font-size:1.5em;font-weight:bold;text-transform:uppercase;text-align:center;margin-bottom:4px;">MANAGE FARM</h2>
-      <p style="font-size:1.2em;font-weight:bold;text-align:center;margin:0 0 20px;" id="manage-farm-name"></p>
+      <h2 class="farm-modal-name" id="manage-farm-name"></h2>
+      <div style="text-align:center;margin-bottom:20px;">
+        <button type="button" id="rename-farm-btn">Rename Farm</button>
+      </div>
       <div id="farm-members-section" style="margin-bottom:24px;">
         <h3 style="margin:0 0 10px;font-size:1em;">Members</h3>
         <div id="farm-members-list"></div>
