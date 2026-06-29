@@ -1151,16 +1151,21 @@ button:hover {
 
   .mobile-nav-arrow {
     background: transparent;
-    border: none;
+    border: 1px solid rgba(255,228,196,0.30);
     color: #ffe4c4;
     font-size: 1.6em;
-    padding: 0 8px;
+    padding: 0 10px;
     cursor: pointer;
     line-height: 1;
-    border-radius: 6px;
+    border-radius: 8px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .mobile-nav-arrow:hover {
     background: rgba(255,228,196,0.15);
+    border-color: rgba(255,228,196,0.55);
   }
 
   .mobile-month-label {
@@ -1298,24 +1303,57 @@ button:hover {
     padding: 0;
   }
 
+  /* Fixed cell heights — never grow with content */
   .day-cell {
     height: 88px;
+    min-height: 88px;
+    max-height: 88px;
     padding: 5px;
     font-size: 0.88em;
+    overflow: hidden;
+  }
+
+  /* Two-line badges on mobile */
+  .event-badge {
+    font-size: 0.58em;
+    padding: 2px 4px;
+    white-space: normal;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.25;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .badge-type {
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .badge-batch {
+    font-weight: normal;
+    opacity: 0.88;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* Long custom event names wrap with overflow hidden */
+  .event-labels {
+    overflow: hidden;
+    max-height: 56px;
+    margin-bottom: 2px;
   }
 
   .notes-container {
-    height: 46px;
+    height: 36px;
     gap: 3px;
   }
 
   .notes-column {
     font-size: 0.62em;
-  }
-
-  .event-badge {
-    font-size: 0.58em;
-    padding: 1px 3px;
   }
 
   .today-cell .day-number {
@@ -1324,9 +1362,23 @@ button:hover {
     font-size: 0.85em;
   }
 
+  /* Disabled mobile nav buttons */
+  .mobile-nav-btn.mobile-nav-disabled,
+  .mobile-nav-btn:disabled {
+    color: #4a3020;
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .mobile-nav-btn.mobile-nav-disabled:hover {
+    background: transparent;
+    color: #4a3020;
+  }
+
+  /* Modals: leave breathing room from screen edges */
   .modal-content {
-    max-height: 80vh;
-    width: 95%;
+    max-height: 82vh;
+    width: calc(100% - 40px);
+    max-width: 460px;
     padding: 20px 18px;
   }
 }
@@ -1334,7 +1386,10 @@ button:hover {
 @media (max-width: 480px) {
   .day-cell {
     height: 76px;
+    min-height: 76px;
+    max-height: 76px;
     padding: 3px;
+    overflow: hidden;
   }
 
   .day-number {
@@ -1343,16 +1398,28 @@ button:hover {
   }
 
   .notes-container {
-    height: 36px;
+    height: 28px;
   }
 
   .event-labels {
+    max-height: 44px;
     margin-bottom: 2px;
   }
 
   .mobile-month-label {
     min-width: 90px;
     font-size: 0.85em;
+  }
+}
+
+/* =============================================
+   PRINT — iPhone / iOS Safari web app support
+   ============================================= */
+
+@media print {
+  html, body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 
