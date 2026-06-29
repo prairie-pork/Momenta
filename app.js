@@ -561,14 +561,17 @@ async function updateCalendar() {
 
       const labelsDiv = document.createElement('div');
       labelsDiv.classList.add('event-labels');
+      let primaryBadgeRendered = false;
       for (const evt of dayEvents) {
         const style = eventStyle(evt.event_type);
         const badge = document.createElement('span');
         badge.classList.add('event-badge', evt.event_type);
         badge.style.backgroundColor = style.badge;
-        if (evt.event_type.startsWith('custom:')) {
-          badge.textContent = style.label;
-        } else {
+        const isCustom = evt.event_type.startsWith('custom:');
+        if (!isCustom && !primaryBadgeRendered) {
+          // First standard event: two-line badge (type + batch name)
+          primaryBadgeRendered = true;
+          badge.classList.add('primary-badge');
           const typeSpan = document.createElement('span');
           typeSpan.classList.add('badge-type');
           typeSpan.textContent = style.label;
@@ -577,6 +580,9 @@ async function updateCalendar() {
           batchSpan.textContent = evt.batch_name + ' ' + evt.batch_number;
           badge.appendChild(typeSpan);
           badge.appendChild(batchSpan);
+        } else {
+          // Custom events and subsequent standard events: compact single line
+          badge.textContent = style.label;
         }
         labelsDiv.appendChild(badge);
       }
