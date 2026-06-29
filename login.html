@@ -35,54 +35,62 @@
     </p>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="auth.js"></script>
+  <script src="supabase-loader.js"></script>
   <script>
-    const form = document.getElementById('login-form');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const messageDiv = document.getElementById('auth-message');
-    const submitBtn = document.getElementById('submit-btn');
-
-    function showMessage(text, type) {
-      messageDiv.textContent = text;
-      messageDiv.className = 'auth-message ' + type;
-    }
-
-    // If already logged in, skip the login page
-    getCurrentUser().then(function (user) {
-      if (user) {
-        window.location.href = 'index.html';
-      }
+    document.addEventListener('supabase-library-ready', function () {
+      const authScript = document.createElement('script');
+      authScript.src = 'auth.js';
+      authScript.onload = initLoginPage;
+      document.body.appendChild(authScript);
     });
 
-    form.addEventListener('submit', async function (event) {
-      event.preventDefault();
+    function initLoginPage() {
+      const form = document.getElementById('login-form');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const messageDiv = document.getElementById('auth-message');
+      const submitBtn = document.getElementById('submit-btn');
 
-      const email = emailInput.value.trim();
-      const password = passwordInput.value;
-
-      if (!email || !password) {
-        showMessage('Please enter both email and password.', 'error');
-        return;
+      function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = 'auth-message ' + type;
       }
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Logging in...';
-
-      try {
-        await signIn(email, password);
-        showMessage('Login successful! Redirecting...', 'success');
-        setTimeout(function () {
+      // If already logged in, skip the login page
+      getCurrentUser().then(function (user) {
+        if (user) {
           window.location.href = 'index.html';
-        }, 1000);
-      } catch (error) {
-        showMessage(error.message || 'Login failed. Please try again.', 'error');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Log In';
-      }
-    });
+        }
+      });
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+          showMessage('Please enter both email and password.', 'error');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Logging in...';
+
+        try {
+          await signIn(email, password);
+          showMessage('Login successful! Redirecting...', 'success');
+          setTimeout(function () {
+            window.location.href = 'index.html';
+          }, 1000);
+        } catch (error) {
+          showMessage(error.message || 'Login failed. Please try again.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Log In';
+        }
+      });
+    }
   </script>
 
 </body>

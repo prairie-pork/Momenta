@@ -1,6 +1,6 @@
 -- =============================================
 -- RUN THIS IN SUPABASE SQL EDITOR
--- Adds Farm/Personal calendar support + multi-user
+-- Complete production schema: calendars, members, invites, events, notes, settings
 -- =============================================
 
 -- 1. Calendars table
@@ -13,6 +13,64 @@ CREATE TABLE IF NOT EXISTS calendars (
 );
 
 ALTER TABLE calendars ENABLE ROW LEVEL SECURITY;
+
+-- Core app tables. Kept here so this file is safe to run on a fresh project.
+CREATE TABLE IF NOT EXISTS events (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  batch_name TEXT NOT NULL,
+  batch_number INT NOT NULL,
+  event_type TEXT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  calendar_id UUID REFERENCES calendars(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS calendar_events (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  year INT NOT NULL,
+  month INT NOT NULL,
+  day INT NOT NULL,
+  col1 TEXT DEFAULT '',
+  col2 TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  calendar_id UUID REFERENCES calendars(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS batch_configs (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL UNIQUE,
+  pregnancy_days INT NOT NULL DEFAULT 115,
+  breed_range INT NOT NULL DEFAULT 3,
+  lock_up_before_farrowing INT NOT NULL DEFAULT 2,
+  vaccinate_after_farrowing INT NOT NULL DEFAULT 10,
+  weaning_after_farrowing INT NOT NULL DEFAULT 23,
+  batch_spacing_days INT NOT NULL DEFAULT 14,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE calendar_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE batch_configs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own config" ON batch_configs;
+DROP POLICY IF EXISTS "Users can insert their own config" ON batch_configs;
+DROP POLICY IF EXISTS "Users can update their own config" ON batch_configs;
+DROP POLICY IF EXISTS "batch_configs_select" ON batch_configs;
+DROP POLICY IF EXISTS "batch_configs_insert" ON batch_configs;
+DROP POLICY IF EXISTS "batch_configs_update" ON batch_configs;
+
+CREATE POLICY "batch_configs_select" ON batch_configs
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "batch_configs_insert" ON batch_configs
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "batch_configs_update" ON batch_configs
+  FOR UPDATE USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- Drop old policies in case they exist from a prior run
 DROP POLICY IF EXISTS "calendars_owner_select" ON calendars;
@@ -71,18 +129,6 @@ CREATE POLICY "cmembers_insert" ON calendar_members FOR INSERT
     calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
   );
 
--- Non-owners can join via a valid invite code
-CREATE POLICY "cmembers_join" ON calendar_members FOR INSERT
-  WITH CHECK (
-    user_id = auth.uid()
-    AND EXISTS (
-      SELECT 1 FROM invite_codes
-      WHERE calendar_id = calendar_members.calendar_id
-      AND used_by IS NULL
-      AND expires_at > now()
-    )
-  );
-
 CREATE POLICY "cmembers_delete" ON calendar_members FOR DELETE
   USING (
     calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
@@ -120,18 +166,89 @@ CREATE POLICY "invites_owner_select" ON invite_codes FOR SELECT
   USING (calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid()));
 
 CREATE POLICY "invites_owner_insert" ON invite_codes FOR INSERT
-  WITH CHECK (auth.uid() = created_by);
+  WITH CHECK (
+    auth.uid() = created_by
+    AND calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
+  );
 
 CREATE POLICY "invites_owner_delete" ON invite_codes FOR DELETE
   USING (calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid()));
 
--- Anyone can read a specific code by code string (for redemption)
-CREATE POLICY "invites_redeem_select" ON invite_codes FOR SELECT
-  USING (true);
+-- Invite redemption happens only through redeem_invite(); no public invite reads/updates.
+CREATE TABLE IF NOT EXISTS invite_attempts (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  attempted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
--- Joining user can mark the code as used
-CREATE POLICY "invites_redeem_update" ON invite_codes FOR UPDATE
-  USING (true);
+ALTER TABLE invite_attempts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "invite_attempts_no_client_access" ON invite_attempts;
+
+CREATE OR REPLACE FUNCTION redeem_invite(invite_code TEXT)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  inv invite_codes%ROWTYPE;
+  caller_id UUID := auth.uid();
+  caller_email TEXT := lower(coalesce(auth.jwt() ->> 'email', ''));
+BEGIN
+  IF caller_id IS NULL THEN
+    RAISE EXCEPTION 'You must be logged in to join a farm.';
+  END IF;
+
+  DELETE FROM invite_attempts WHERE attempted_at < now() - interval '15 minutes';
+
+  IF (
+    SELECT COUNT(*)
+    FROM invite_attempts
+    WHERE user_id = caller_id
+      AND attempted_at > now() - interval '15 minutes'
+  ) >= 10 THEN
+    RAISE EXCEPTION 'Too many invite attempts. Please wait a few minutes and try again.';
+  END IF;
+
+  INSERT INTO invite_attempts (user_id) VALUES (caller_id);
+
+  SELECT *
+    INTO inv
+    FROM invite_codes
+    WHERE code = upper(trim(invite_code))
+    FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Invalid invite code.';
+  END IF;
+
+  IF inv.used_by IS NOT NULL THEN
+    RAISE EXCEPTION 'This invite code has already been used.';
+  END IF;
+
+  IF inv.expires_at <= now() THEN
+    RAISE EXCEPTION 'This invite code has expired.';
+  END IF;
+
+  IF lower(inv.email) <> caller_email THEN
+    RAISE EXCEPTION 'This invite code is not for your email address.';
+  END IF;
+
+  INSERT INTO calendar_members (calendar_id, user_id, role)
+  VALUES (inv.calendar_id, caller_id, 'editor')
+  ON CONFLICT (calendar_id, user_id) DO NOTHING;
+
+  UPDATE invite_codes
+    SET used_by = caller_id,
+        used_at = now()
+    WHERE id = inv.id;
+
+  RETURN inv.calendar_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION redeem_invite(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION redeem_invite(TEXT) TO authenticated;
 
 -- 4. Add calendar_id to existing tables
 ALTER TABLE events ADD COLUMN IF NOT EXISTS calendar_id UUID REFERENCES calendars(id) ON DELETE CASCADE;
@@ -154,6 +271,16 @@ ALTER TABLE calendar_events DROP CONSTRAINT IF EXISTS calendar_events_user_id_ye
 ALTER TABLE calendar_events DROP CONSTRAINT IF EXISTS ce_user_calendar_day;
 ALTER TABLE calendar_events ADD CONSTRAINT ce_user_calendar_day UNIQUE (user_id, year, month, day, calendar_id);
 
+CREATE OR REPLACE FUNCTION can_access_calendar(cal_id UUID, uid UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (SELECT 1 FROM calendars WHERE id = cal_id AND owner_id = uid)
+    OR EXISTS (SELECT 1 FROM calendar_members WHERE calendar_id = cal_id AND user_id = uid);
+$$;
+
 -- 5. Update RLS on events to allow farm members
 DROP POLICY IF EXISTS "Users can view their own events" ON events;
 DROP POLICY IF EXISTS "Users can insert their own events" ON events;
@@ -165,32 +292,20 @@ DROP POLICY IF EXISTS "events_update" ON events;
 DROP POLICY IF EXISTS "events_delete" ON events;
 
 CREATE POLICY "events_select" ON events FOR SELECT
-  USING (
-    user_id = auth.uid()
-    OR calendar_id IN (SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid())
-    OR calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
-  );
+  USING (can_access_calendar(calendar_id, auth.uid()));
 
 CREATE POLICY "events_insert" ON events FOR INSERT
   WITH CHECK (
     user_id = auth.uid()
-    OR calendar_id IN (SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid())
-    OR calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
+    AND can_access_calendar(calendar_id, auth.uid())
   );
 
 CREATE POLICY "events_update" ON events FOR UPDATE
-  USING (
-    user_id = auth.uid()
-    OR calendar_id IN (SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid())
-    OR calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
-  );
+  USING (can_access_calendar(calendar_id, auth.uid()))
+  WITH CHECK (can_access_calendar(calendar_id, auth.uid()));
 
 CREATE POLICY "events_delete" ON events FOR DELETE
-  USING (
-    user_id = auth.uid()
-    OR calendar_id IN (SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid())
-    OR calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
-  );
+  USING (can_access_calendar(calendar_id, auth.uid()));
 
 -- 6. Update RLS on calendar_events to allow farm members
 DROP POLICY IF EXISTS "Users can view their own events" ON calendar_events;
@@ -203,32 +318,20 @@ DROP POLICY IF EXISTS "ce_update" ON calendar_events;
 DROP POLICY IF EXISTS "ce_delete" ON calendar_events;
 
 CREATE POLICY "ce_select" ON calendar_events FOR SELECT
-  USING (
-    user_id = auth.uid()
-    OR calendar_id IN (SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid())
-    OR calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
-  );
+  USING (can_access_calendar(calendar_id, auth.uid()));
 
 CREATE POLICY "ce_insert" ON calendar_events FOR INSERT
   WITH CHECK (
     user_id = auth.uid()
-    OR calendar_id IN (SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid())
-    OR calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
+    AND can_access_calendar(calendar_id, auth.uid())
   );
 
 CREATE POLICY "ce_update" ON calendar_events FOR UPDATE
-  USING (
-    user_id = auth.uid()
-    OR calendar_id IN (SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid())
-    OR calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
-  );
+  USING (can_access_calendar(calendar_id, auth.uid()))
+  WITH CHECK (can_access_calendar(calendar_id, auth.uid()));
 
 CREATE POLICY "ce_delete" ON calendar_events FOR DELETE
-  USING (
-    user_id = auth.uid()
-    OR calendar_id IN (SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid())
-    OR calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
-  );
+  USING (can_access_calendar(calendar_id, auth.uid()));
 
 -- 7. Remove auto-created Personal calendars — users create/share farms only
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -239,17 +342,33 @@ DELETE FROM calendar_events WHERE calendar_id IN (SELECT id FROM calendars WHERE
 DELETE FROM events WHERE calendar_id IN (SELECT id FROM calendars WHERE type = 'personal');
 DELETE FROM calendars WHERE type = 'personal';
 
--- 9. Function to look up user emails (bypasses RLS on auth.users)
+-- 9. Function to look up user emails for farms the caller can access
 CREATE OR REPLACE FUNCTION get_user_emails(ids UUID[])
 RETURNS TABLE(user_id UUID, email TEXT)
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public, auth
 AS $$
-  SELECT id, email FROM auth.users WHERE id = ANY(ids);
+  SELECT DISTINCT u.id, u.email
+  FROM auth.users u
+  JOIN calendar_members target_member
+    ON target_member.user_id = u.id
+  WHERE u.id = ANY(ids)
+    AND (
+      target_member.calendar_id IN (SELECT id FROM calendars WHERE owner_id = auth.uid())
+      OR target_member.calendar_id IN (
+        SELECT calendar_id FROM calendar_members WHERE user_id = auth.uid()
+      )
+    );
 $$;
 
+REVOKE ALL ON FUNCTION get_user_emails(UUID[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION get_user_emails(UUID[]) TO authenticated;
+
 -- 10. Enable real-time replication so edits sync across farm members
+ALTER TABLE calendar_members REPLICA IDENTITY FULL;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -263,6 +382,12 @@ BEGIN
     WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'calendar_events'
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE calendar_events;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'calendar_members'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE calendar_members;
   END IF;
 END;
 $$;

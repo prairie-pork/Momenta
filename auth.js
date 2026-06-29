@@ -1,6 +1,10 @@
 // =============================================
 // Supabase Client Setup
 // =============================================
+if (!window.supabase || !window.supabase.createClient) {
+  throw new Error('Supabase library failed to load.');
+}
+
 // This uses the UMD build of Supabase, which was loaded via a <script> tag
 // in the HTML. The UMD build creates a global "supabase" object on window.
 // createClient() connects our app to the Supabase backend.

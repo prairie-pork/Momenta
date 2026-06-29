@@ -21,37 +21,41 @@
         <div class="sidebar-group-title">Account</div>
         <div id="sidebar-user" style="display:none;">
           <span id="sidebar-email" class="sidebar-email"></span>
-          <button id="logout-btn" class="sidebar-btn">Log Out</button>
+          <button id="logout-btn" class="sidebar-btn sidebar-btn-logout">Log Out</button>
         </div>
       </div>
 
-      <!-- Calendar -->
+      <!-- Farms List -->
       <div class="sidebar-group">
         <div class="sidebar-group-title">Farms</div>
         <div id="calendar-list" class="sidebar-cal-list"></div>
-        <button id="create-farm-btn" class="sidebar-btn btn-accent">+ New Farm</button>
+      </div>
+
+      <!-- Farm Actions -->
+      <div class="sidebar-group sidebar-farm-actions">
+        <button id="create-farm-btn" class="sidebar-btn">+ New Farm</button>
         <button id="join-farm-btn" class="sidebar-btn">Join Farm</button>
+        <button id="manage-farm-btn" class="sidebar-btn" style="display:none;">Manage Farms</button>
       </div>
 
       <!-- Month Navigation -->
-      <div class="sidebar-group">
+      <div class="sidebar-group sidebar-month-nav">
         <div class="sidebar-group-title">Month</div>
-        <h2 id="month-display" class="sidebar-month-name"></h2>
-        <div class="sidebar-nav-row">
-          <button id="prev-btn" class="sidebar-btn-sm">◀</button>
-          <button id="today-btn" class="sidebar-btn-sm btn-accent">Today</button>
-          <button id="next-btn" class="sidebar-btn-sm">▶</button>
+        <div class="month-nav-card">
+          <button id="prev-btn" class="month-nav-arrow" type="button" aria-label="Previous month">&#8249;</button>
+          <div id="month-display" class="month-nav-label"></div>
+          <button id="next-btn" class="month-nav-arrow" type="button" aria-label="Next month">&#8250;</button>
         </div>
+        <button id="today-btn" class="sidebar-btn month-nav-today" type="button">Today</button>
       </div>
 
       <!-- Actions -->
-      <div class="sidebar-group">
+      <div class="sidebar-group sidebar-actions">
         <div class="sidebar-group-title">Actions</div>
         <button id="add-batch-btn" class="sidebar-btn">+ Add Batch</button>
         <button id="all-events-btn" class="sidebar-btn">All Events</button>
         <button id="year-view-btn" class="sidebar-btn">Year View</button>
         <button id="settings-btn" class="sidebar-btn">Settings</button>
-        <button id="manage-farm-btn" class="sidebar-btn" style="display:none;">Manage Farm</button>
       </div>
 
     </aside>
@@ -275,9 +279,19 @@
     <p>Checking authentication...</p>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="auth.js"></script>
-  <script src="app.js"></script>
+  <script src="supabase-loader.js"></script>
+  <script>
+    document.addEventListener('supabase-library-ready', function () {
+      var authScript = document.createElement('script');
+      authScript.src = 'auth.js';
+      authScript.onload = function () {
+        var appScript = document.createElement('script');
+        appScript.src = 'app.js';
+        document.body.appendChild(appScript);
+      };
+      document.body.appendChild(authScript);
+    });
+  </script>
 
 </body>
 

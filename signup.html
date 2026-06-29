@@ -40,70 +40,78 @@
     </p>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="auth.js"></script>
+  <script src="supabase-loader.js"></script>
   <script>
-    const form = document.getElementById('signup-form');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const confirmInput = document.getElementById('confirm-password');
-    const messageDiv = document.getElementById('auth-message');
-    const submitBtn = document.getElementById('submit-btn');
-
-    function showMessage(text, type) {
-      messageDiv.textContent = text;
-      messageDiv.className = 'auth-message ' + type;
-    }
-
-    // If already logged in, send to calendar
-    getCurrentUser().then(function (user) {
-      if (user) {
-        window.location.href = 'index.html';
-      }
+    document.addEventListener('supabase-library-ready', function () {
+      const authScript = document.createElement('script');
+      authScript.src = 'auth.js';
+      authScript.onload = initSignupPage;
+      document.body.appendChild(authScript);
     });
 
-    form.addEventListener('submit', async function (event) {
-      event.preventDefault();
+    function initSignupPage() {
+      const form = document.getElementById('signup-form');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const confirmInput = document.getElementById('confirm-password');
+      const messageDiv = document.getElementById('auth-message');
+      const submitBtn = document.getElementById('submit-btn');
 
-      const email = emailInput.value.trim();
-      const password = passwordInput.value;
-      const confirmPassword = confirmInput.value;
-
-      if (!email || !password || !confirmPassword) {
-        showMessage('Please fill in all fields.', 'error');
-        return;
+      function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = 'auth-message ' + type;
       }
 
-      if (password !== confirmPassword) {
-        showMessage('Passwords do not match.', 'error');
-        return;
-      }
+      // If already logged in, send to calendar
+      getCurrentUser().then(function (user) {
+        if (user) {
+          window.location.href = 'index.html';
+        }
+      });
 
-      if (password.length < 6) {
-        showMessage('Password must be at least 6 characters.', 'error');
-        return;
-      }
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Creating account...';
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = confirmInput.value;
 
-      try {
-        const result = await signUp(email, password);
-        if (!result.session) {
-          showMessage('Account created! Check your email (' + email + ') for a confirmation link, then log in.', 'success');
+        if (!email || !password || !confirmPassword) {
+          showMessage('Please fill in all fields.', 'error');
           return;
         }
-        showMessage('Account created! Redirecting to your calendar...', 'success');
-        setTimeout(function () {
-          window.location.href = 'index.html';
-        }, 1500);
-      } catch (error) {
-        showMessage(error.message || 'An error occurred during sign up.', 'error');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign Up';
-      }
-    });
+
+        if (password !== confirmPassword) {
+          showMessage('Passwords do not match.', 'error');
+          return;
+        }
+
+        if (password.length < 6) {
+          showMessage('Password must be at least 6 characters.', 'error');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating account...';
+
+        try {
+          const result = await signUp(email, password);
+          if (!result.session) {
+            showMessage('Account created! Check your email (' + email + ') for a confirmation link, then log in.', 'success');
+            return;
+          }
+          showMessage('Account created! Redirecting to your calendar...', 'success');
+          setTimeout(function () {
+            window.location.href = 'index.html';
+          }, 1500);
+        } catch (error) {
+          showMessage(error.message || 'An error occurred during sign up.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign Up';
+        }
+      });
+    }
   </script>
 
 </body>

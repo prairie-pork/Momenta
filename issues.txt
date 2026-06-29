@@ -1,0 +1,18 @@
+High: Persistent XSS risk from innerHTML
+Several places build HTML using user-controlled values:
+Batch names in All Events: [app.js (line 812)](C:/Users/user/Desktop/folder/Momenta/app.js:812)
+Farm member emails: [app.js (line 1188)](C:/Users/user/Desktop/folder/Momenta/app.js:1188)
+Invite emails/codes: [app.js (line 1220)](C:/Users/user/Desktop/folder/Momenta/app.js:1220)
+Farm calendar names in sidebar: [app.js (line 163)](C:/Users/user/Desktop/folder/Momenta/app.js:163)
+A user could put HTML/JavaScript into a farm name, batch name, or invite email and have it run in another user’s browser. That is one of the first things I’d fix.
+Medium: Removed members may keep access to rows they created
+Event policies allow access when user_id = auth.uid() even if the user is no longer a farm member: [setup-calendars.sql (line 167)](C:/Users/user/Desktop/folder/Momenta/setup-calendars.sql:167). So a removed farm member may still read/update/delete events or notes they created.
+Medium: Email lookup RPC is too broad
+[get_user_emails (line 243)](C:/Users/user/Desktop/folder/Momenta/setup-calendars.sql:243) is SECURITY DEFINER and returns emails for any UUIDs passed in. That should be limited to farm owners/members who are allowed to see those users.
+My Priority Fix List
+Replace invite-code flow with a secure RPC like redeem_invite(code) that checks code, expiry, email, used status, and inserts membership server-side.
+Remove public SELECT true and UPDATE true policies from invite_codes.
+Escape or stop using innerHTML for user-controlled values.
+Change event/note RLS to depend on current farm membership/ownership, not user_id alone.
+Lock down get_user_emails to only return emails for members of farms the caller owns or belongs to.
+The app is not safe to release yet with the current invite policies and XSS spots.

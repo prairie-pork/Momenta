@@ -80,10 +80,26 @@ async function loadCalendars() {
     currentCalendarId = calendars.length > 0 ? calendars[0].id : null;
   }
   currentCalendar = calendars.find(c => c.id === currentCalendarId) || null;
-  if (currentCalendarId) localStorage.setItem('momenta_calendar_id', currentCalendarId);
+  if (currentCalendarId) {
+    localStorage.setItem('momenta_calendar_id', currentCalendarId);
+  } else {
+    localStorage.removeItem('momenta_calendar_id');
+  }
   await renderCalendarSwitcher();
   updateFarmButton();
+  updateFarmAvailability();
   subscribeToCalendarChanges();
+}
+
+async function ensureActiveCalendar() {
+  if (currentCalendarId) return true;
+  try {
+    await loadCalendars();
+  } catch (err) {
+    console.error('Could not load calendars:', err);
+    return false;
+  }
+  return !!currentCalendarId;
 }
 
 let calendarSubscription = null;
@@ -109,12 +125,24 @@ function subscribeToCalendarChanges() {
         updateCalendar();
       }
     )
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'calendar_members', filter: 'user_id=eq.' + user.id },
+      async () => {
+        await loadCalendars();
+        await updateCalendar();
+      }
+    )
     .subscribe();
 }
 
 async function renderCalendarSwitcher() {
   const container = document.getElementById('calendar-list');
   if (!container) return;
+
+  if (calendars.length === 0) {
+    container.innerHTML = '<p class="empty-farms">No farms yet.</p>';
+    return;
+  }
 
   // Check which farms have other members (for icon)
   const farmIds = calendars.filter(c => c.type === 'farm').map(c => c.id);
@@ -129,12 +157,15 @@ async function renderCalendarSwitcher() {
     }
   }
 
+  const iconPrivate = '<span class="cal-btn-icon" title="Private farm"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5 8 2.5l6 5V14H2V7.5z"/><path d="M6 14V9h4v5"/></svg></span>';
+  const iconShared = '<span class="cal-btn-icon" title="Shared farm"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="5" r="2.25"/><circle cx="10.5" cy="5" r="2.25"/><path d="M1 13.5c0-2.5 2-3.75 4.5-3.75S9.5 11 9.5 13.5"/><path d="M6.5 13.5c0-2 1.75-3.25 4-3.25s4 1.25 4 3.25"/></svg></span>';
+
   let html = '';
   for (const cal of calendars) {
     const active = cal.id === currentCalendarId ? ' cal-btn-active' : '';
-    const icon = sharedIds.has(cal.id) ? '🤝' : '🏠';
-    const label = cal.name;
-    html += '<button class="cal-btn' + active + '" data-cal-id="' + cal.id + '">' + icon + ' ' + label + '</button>';
+    const icon = sharedIds.has(cal.id) ? iconShared : iconPrivate;
+    const label = escapeHtml(cal.name);
+    html += '<button class="cal-btn' + active + '" data-cal-id="' + escapeAttr(cal.id) + '">' + icon + '<span class="cal-btn-label">' + label + '</span></button>';
   }
   container.innerHTML = html;
   container.querySelectorAll('.cal-btn').forEach(btn => {
@@ -154,9 +185,18 @@ function updateFarmButton() {
   const btn = document.getElementById('manage-farm-btn');
   if (!btn) return;
   if (currentCalendar && currentCalendar.type === 'farm' && currentCalendar.owner_id === user.id) {
-    btn.style.display = 'inline-block';
+    btn.style.display = 'block';
   } else {
     btn.style.display = 'none';
+  }
+}
+
+function updateFarmAvailability() {
+  const hasFarm = calendars.length > 0;
+  const disabledIds = ['manage-farm-btn', 'add-batch-btn', 'all-events-btn', 'year-view-btn'];
+  for (const id of disabledIds) {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = !hasFarm;
   }
 }
 
@@ -196,6 +236,20 @@ function fmtDate(date) {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return y + '-' + m + '-' + d;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
 }
 
 // =============================================
@@ -239,14 +293,15 @@ async function fetchBatchEvents(year, month) {
   if (!currentCalendarId) return [];
   const lastDay = new Date(year, month + 1, 0).getDate();
   const ym = year + '-' + String(month + 1).padStart(2, '0');
+  const monthStart = ym + '-01';
+  const monthEnd = ym + '-' + String(lastDay).padStart(2, '0');
   const { data, error } = await supabase
     .from('events')
     .select('*')
     .eq('calendar_id', currentCalendarId)
-    .gte('start_date', ym + '-01')
-    .lte('start_date', ym + '-' + String(lastDay).padStart(2, '0'));
+    .lte('start_date', monthEnd);
   if (error) { console.error('Error fetching events:', error); return []; }
-  return data || [];
+  return (data || []).filter(evt => (evt.end_date || evt.start_date) >= monthStart);
 }
 
 // Build a map: { '2026-06-02': [event, ...], ... }
@@ -357,6 +412,7 @@ function calcBatchEvents(config, breedStartStr, namePrefix, batchCount, startBat
 }
 
 async function saveBatchEvents(events) {
+  if (!currentCalendarId) throw new Error('Please create or select a farm before adding batches.');
   const rows = events.map(e => ({
     user_id: user.id,
     batch_name: e.batch_name,
@@ -388,6 +444,7 @@ async function updateCalendar() {
     dayCells[i].style.display = 'flex';
     dayCells[i].style.background = '';
     dayCells[i].classList.remove('today-cell');
+    dayCells[i].classList.add('empty-day-cell');
   }
 
   const firstDayIndex = new Date(currentYear, currentMonthIndex, 1).getDay();
@@ -405,6 +462,7 @@ async function updateCalendar() {
   for (let day = 1; day <= totalDays; day++) {
     const slot = firstDayIndex + day - 1;
     const cell = dayCells[slot];
+    cell.classList.remove('empty-day-cell');
 
     // Highlight today's date
     if (currentYear === today.getFullYear() && currentMonthIndex === today.getMonth() && day === today.getDate()) {
@@ -659,8 +717,16 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
   btn.textContent = 'Generating...';
 
   try {
-    // Load latest config from DB
-    await loadConfig();
+    if (!(await ensureActiveCalendar())) {
+      throw new Error('Please create or select a farm before adding batches.');
+    }
+
+    // Load latest config from DB; keep using current/default settings if it flakes.
+    try {
+      await retryQuery(() => loadConfig());
+    } catch (configErr) {
+      console.warn('Could not load batch config, using current settings:', configErr);
+    }
 
     // Check for duplicate breed ranges (not just start dates)
     const { data: existingBreeds } = await supabase
@@ -727,6 +793,11 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
   container.innerHTML = '<p style="text-align:center;color:#888;">Loading...</p>';
   showModal('events-list-modal');
 
+  if (!(await ensureActiveCalendar())) {
+    container.innerHTML = '<p class="empty-events">Create or select a farm to view events.</p>';
+    return;
+  }
+
   const { data: allEvents, error } = await supabase
     .from('events')
     .select('*')
@@ -758,10 +829,13 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
     const g = groups[key];
     const breedEvt = g.events.find(e => e.event_type === 'breed');
     const breedDate = breedEvt ? breedEvt.start_date : '?';
+    const batchLabel = escapeHtml(g.batchName + ' ' + g.batchNumber);
+    const batchNameAttr = escapeAttr(g.batchName);
+    const batchNumberAttr = escapeAttr(g.batchNumber);
 
     html += '<div class="batch-group">';
-    html += '<h3>' + g.batchName + ' ' + g.batchNumber + ' <span style="font-weight:normal;font-size:0.85em;color:#666;">breed ' + breedDate + '</span></h3>';
-    html += '<button class="delete-btn" data-action="delete-batch" data-name="' + g.batchName + '" data-number="' + g.batchNumber + '">Delete Batch</button>';
+    html += '<h3>' + batchLabel + ' <span style="font-weight:normal;font-size:0.85em;color:#666;">breed ' + escapeHtml(breedDate) + '</span></h3>';
+    html += '<button class="delete-btn" data-action="delete-batch" data-name="' + batchNameAttr + '" data-number="' + batchNumberAttr + '">Delete Batch</button>';
 
     // Events list
     for (const evt of g.events) {
@@ -773,9 +847,9 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
       html += '<div class="event-row">';
       html += '<span class="event-type-dot" style="background:' + style.badge + '"></span>';
       html += '<span class="event-type-label" style="color:' + style.badge + '">' + style.label + '</span>';
-      html += '<span class="event-batch-label">' + g.batchName + ' ' + g.batchNumber + '</span>';
-      html += '<span class="event-date" style="font-size:1.15em;font-weight:bold;">' + dateRange + '</span>';
-      html += '<button data-action="reschedule" data-id="' + evt.id + '" data-type="' + evt.event_type + '" data-start="' + evt.start_date + '" data-end="' + (evt.end_date || '') + '" data-batch="' + g.batchName + ' ' + g.batchNumber + '" data-batch-name="' + g.batchName + '" data-batch-number="' + g.batchNumber + '">Reschedule</button>';
+      html += '<span class="event-batch-label">' + batchLabel + '</span>';
+      html += '<span class="event-date" style="font-size:1.15em;font-weight:bold;">' + escapeHtml(dateRange) + '</span>';
+      html += '<button data-action="reschedule" data-id="' + escapeAttr(evt.id) + '" data-type="' + escapeAttr(evt.event_type) + '" data-start="' + escapeAttr(evt.start_date) + '" data-end="' + escapeAttr(evt.end_date || '') + '" data-batch="' + escapeAttr(g.batchName + ' ' + g.batchNumber) + '" data-batch-name="' + batchNameAttr + '" data-batch-number="' + batchNumberAttr + '">Reschedule</button>';
       html += '</div>';
     }
 
@@ -888,11 +962,16 @@ document.getElementById('reschedule-form').addEventListener('submit', async (e) 
   btn.textContent = 'Checking...';
 
   try {
+    if (!(await ensureActiveCalendar())) {
+      throw new Error('Please create or select a farm before updating events.');
+    }
+
     const { data: batchEvents } = await supabase
       .from('events')
       .select('event_type, start_date, end_date')
       .eq('batch_name', batchName)
       .eq('batch_number', batchNumber)
+      .eq('calendar_id', currentCalendarId)
       .neq('id', eventId);
 
     const conflict = checkEventOrder(eventType, newDate, newEndDate, batchEvents || []);
@@ -914,7 +993,8 @@ document.getElementById('reschedule-form').addEventListener('submit', async (e) 
     const { error } = await supabase
       .from('events')
       .update(updateData)
-      .eq('id', eventId);
+      .eq('id', eventId)
+      .eq('calendar_id', currentCalendarId);
 
     if (error) throw error;
 
@@ -961,11 +1041,15 @@ async function renderYearView(year) {
   title.textContent = year;
   container.innerHTML = '<p style="text-align:center;color:#888;">Loading...</p>';
 
+  if (!(await ensureActiveCalendar())) {
+    container.innerHTML = '<p class="empty-events">Create or select a farm to view events.</p>';
+    return;
+  }
+
   const { data: events, error } = await supabase
     .from('events')
     .select('*')
     .eq('calendar_id', currentCalendarId)
-    .gte('start_date', year + '-01-01')
     .lte('start_date', year + '-12-31')
     .order('start_date', { ascending: true });
 
@@ -974,7 +1058,8 @@ async function renderYearView(year) {
     return;
   }
 
-  const eventsByDate = buildEventsMapForYear(events || []);
+  const yearStart = year + '-01-01';
+  const eventsByDate = buildEventsMapForYear((events || []).filter(evt => (evt.end_date || evt.start_date) >= yearStart));
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
@@ -1125,9 +1210,9 @@ async function renderFarmMembers(members) {
     const role = m.role === 'owner' ? ' (Owner)' : '';
     const email = emailMap[m.user_id] || m.user_id.substring(0, 8) + '...';
     html += '<div style="padding:6px 0;border-bottom:1px solid #eee;font-size:0.95em;">';
-    html += '<span>' + email + '</span>' + role;
+    html += '<span>' + escapeHtml(email) + '</span>' + role;
     if (m.role !== 'owner') {
-      html += ' <button class="delete-btn" style="font-size:0.75em;padding:2px 10px;float:right;" data-action="remove-member" data-user="' + m.user_id + '">Remove</button>';
+      html += ' <button class="delete-btn" style="font-size:0.75em;padding:2px 10px;float:right;" data-action="remove-member" data-user="' + escapeAttr(m.user_id) + '">Remove</button>';
     }
     html += '</div>';
   }
@@ -1157,10 +1242,10 @@ async function renderFarmInvites(invites) {
   for (const inv of active) {
     const expired = new Date(inv.expires_at) < now ? ' (EXPIRED)' : '';
     html += '<div style="padding:6px 0;border-bottom:1px solid #eee;font-size:0.95em;">';
-    html += '<span style="font-family:monospace;font-weight:bold;font-size:1.1em;letter-spacing:2px;">' + inv.code + '</span>';
-    html += ' <span style="color:#666;">→ ' + inv.email + '</span>';
+    html += '<span style="font-family:monospace;font-weight:bold;font-size:1.1em;letter-spacing:2px;">' + escapeHtml(inv.code) + '</span>';
+    html += ' <span style="color:#666;">→ ' + escapeHtml(inv.email) + '</span>';
     html += ' <span style="color:#c00;">' + expired + '</span>';
-    html += ' <button class="delete-btn" style="font-size:0.75em;padding:2px 10px;float:right;" data-action="delete-invite" data-id="' + inv.id + '">Delete</button>';
+    html += ' <button class="delete-btn" style="font-size:0.75em;padding:2px 10px;float:right;" data-action="delete-invite" data-id="' + escapeAttr(inv.id) + '">Delete</button>';
     html += '</div>';
   }
   container.innerHTML = html;
@@ -1266,86 +1351,8 @@ document.getElementById('join-farm-form').addEventListener('submit', async (e) =
   btn.textContent = 'Joining...';
 
   try {
-    // Find the invite code
-    const { data: invites, error: invErr } = await supabase
-      .from('invite_codes')
-      .select('*')
-      .eq('code', code);
-
-    if (invErr) throw invErr;
-
-    if (!invites || invites.length === 0) {
-      msg.className = 'auth-message error';
-      msg.textContent = 'Invalid invite code.';
-      btn.disabled = false;
-      btn.textContent = 'Join Farm';
-      return;
-    }
-
-    const invite = invites[0];
-
-    // Check if already used
-    if (invite.used_by) {
-      msg.className = 'auth-message error';
-      msg.textContent = 'This invite code has already been used.';
-      btn.disabled = false;
-      btn.textContent = 'Join Farm';
-      return;
-    }
-
-    // Check if expired
-    if (new Date(invite.expires_at) < new Date()) {
-      msg.className = 'auth-message error';
-      msg.textContent = 'This invite code has expired.';
-      btn.disabled = false;
-      btn.textContent = 'Join Farm';
-      return;
-    }
-
-    // Check that the invite is for this user's email
-    if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
-      msg.className = 'auth-message error';
-      msg.textContent = 'This invite code is not for your email address.';
-      btn.disabled = false;
-      btn.textContent = 'Join Farm';
-      return;
-    }
-
-    // Check if already a member
-    const { data: existingMembers, error: memErr } = await supabase
-      .from('calendar_members')
-      .select('id')
-      .eq('calendar_id', invite.calendar_id)
-      .eq('user_id', user.id);
-
-    if (memErr) throw memErr;
-
-    if (existingMembers && existingMembers.length > 0) {
-      msg.className = 'auth-message error';
-      msg.textContent = 'You are already a member of this farm.';
-      btn.disabled = false;
-      btn.textContent = 'Join Farm';
-      return;
-    }
-
-    // Add member
-    const { error: addErr } = await supabase
-      .from('calendar_members')
-      .insert({
-        calendar_id: invite.calendar_id,
-        user_id: user.id,
-        role: 'editor'
-      });
-
-    if (addErr) throw addErr;
-
-    // Mark code as used
-    const { error: useErr } = await supabase
-      .from('invite_codes')
-      .update({ used_by: user.id, used_at: new Date().toISOString() })
-      .eq('id', invite.id);
-
-    if (useErr) console.error('Error marking code used:', useErr);
+    const { error: redeemErr } = await supabase.rpc('redeem_invite', { invite_code: code });
+    if (redeemErr) throw redeemErr;
 
     msg.className = 'auth-message success';
     msg.textContent = 'Successfully joined the farm!';
