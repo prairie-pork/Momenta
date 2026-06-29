@@ -10,6 +10,83 @@
 
 <body>
 
+  <!-- Mobile Top Bar (hidden on desktop) -->
+  <header class="mobile-header">
+    <span class="mobile-brand">Momenta</span>
+    <div class="mobile-month-nav">
+      <button id="mobile-prev-btn" class="mobile-nav-arrow" aria-label="Previous month">&#8249;</button>
+      <span id="mobile-month-display" class="mobile-month-label"></span>
+      <button id="mobile-next-btn" class="mobile-nav-arrow" aria-label="Next month">&#8250;</button>
+    </div>
+    <button id="mobile-today-btn" class="mobile-today-btn">Today</button>
+  </header>
+
+  <!-- Mobile Bottom Nav (hidden on desktop) -->
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-btn" id="mobile-farms-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21H3V10.5z"/><path d="M9 21v-6h6v6"/></svg>
+      <span>Farms</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobile-add-batch-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span>Batch</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobile-add-event-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+      <span>Event</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobile-review-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      <span>Review</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobile-settings-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- Mobile Farms Drawer -->
+  <div id="mobile-farms-drawer" class="mobile-drawer" style="display:none;">
+    <div class="mobile-drawer-content">
+      <div class="mobile-drawer-header">
+        <span>Farms</span>
+        <button class="mobile-drawer-close" id="close-farms-drawer">&#x2715;</button>
+      </div>
+      <div id="mobile-calendar-list" class="sidebar-cal-list" style="margin-bottom:12px;"></div>
+      <button id="mobile-create-farm-btn" class="sidebar-btn" style="margin-bottom:6px;">+ New Farm</button>
+      <button id="mobile-join-farm-btn" class="sidebar-btn" style="margin-bottom:6px;">Join Farm</button>
+      <button id="mobile-manage-farm-btn" class="sidebar-btn" style="display:none;">Manage Farm</button>
+      <div style="margin-top:10px;border-top:1px solid #d4c4b0;padding-top:10px;">
+        <span id="mobile-sidebar-email" class="sidebar-email"></span>
+        <button id="mobile-logout-btn" class="sidebar-btn sidebar-btn-logout">Log Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Review Drawer -->
+  <div id="mobile-review-drawer" class="mobile-drawer" style="display:none;">
+    <div class="mobile-drawer-content">
+      <div class="mobile-drawer-header">
+        <span>Review</span>
+        <button class="mobile-drawer-close" id="close-review-drawer">&#x2715;</button>
+      </div>
+      <button id="mobile-all-events-btn" class="sidebar-btn" style="margin-bottom:6px;">All Events</button>
+      <button id="mobile-year-view-btn" class="sidebar-btn">Year View</button>
+    </div>
+  </div>
+
+  <!-- Mobile Settings Drawer -->
+  <div id="mobile-settings-drawer" class="mobile-drawer" style="display:none;">
+    <div class="mobile-drawer-content">
+      <div class="mobile-drawer-header">
+        <span>Settings</span>
+        <button class="mobile-drawer-close" id="close-settings-drawer">&#x2715;</button>
+      </div>
+      <button id="mobile-production-settings-btn" class="sidebar-btn" style="margin-bottom:6px;">Production Settings</button>
+      <button id="mobile-custom-events-btn" class="sidebar-btn">Custom Events</button>
+    </div>
+  </div>
+
   <div class="app-layout">
     <aside class="sidebar">
 
