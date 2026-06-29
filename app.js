@@ -334,15 +334,15 @@ async function fetchNotes(year, month) {
   return byDay;
 }
 
-async function saveNote(year, month, day, col1Text, col2Text) {
+async function saveNote(year, month, day, text) {
   if (!currentCalendarId) return;
   await supabase
     .from('calendar_events')
     .upsert({
       user_id: user.id,
       year, month, day,
-      col1: col1Text,
-      col2: col2Text,
+      col1: text,
+      col2: '',
       calendar_id: currentCalendarId,
     }, { onConflict: 'user_id, year, month, day, calendar_id' });
 }
@@ -373,6 +373,31 @@ async function loadCustomEventTypes() {
     .order('name', { ascending: true });
   if (error) { console.error('Error loading custom event types:', error); customEventTypes = []; return []; }
   customEventTypes = data || [];
+  return customEventTypes;
+}
+
+async function loadCalendarCustomEventTypes() {
+  // Load user's own types plus any used by events in the current calendar (shared farm support)
+  await loadCustomEventTypes();
+  if (!currentCalendarId) return customEventTypes;
+
+  const { data: eventTypes } = await supabase
+    .from('events')
+    .select('event_type')
+    .eq('calendar_id', currentCalendarId)
+    .filter('event_type', 'like', 'custom:%');
+  if (!eventTypes || eventTypes.length === 0) return customEventTypes;
+
+  const ids = [...new Set(eventTypes.map(e => e.event_type.slice(7)))];
+  const ownIds = new Set(customEventTypes.map(t => t.id));
+  const missingIds = ids.filter(id => !ownIds.has(id));
+  if (missingIds.length === 0) return customEventTypes;
+
+  const { data: sharedTypes } = await supabase
+    .from('custom_event_types')
+    .select('*')
+    .in('id', missingIds);
+  if (sharedTypes) customEventTypes.push(...sharedTypes);
   return customEventTypes;
 }
 
@@ -510,7 +535,7 @@ async function updateCalendar() {
   monthDisplay.textContent = headerText;
   const calendarHeader = document.getElementById('calendar-header');
   if (calendarHeader) calendarHeader.textContent = headerText;
-  await loadCustomEventTypes();
+  await loadCalendarCustomEventTypes();
 
   for (let i = 0; i < dayCells.length; i++) {
     dayCells[i].innerHTML = '';
@@ -589,72 +614,24 @@ async function updateCalendar() {
       cell.appendChild(labelsDiv);
     }
 
-    // Notes container
+    // Notes container - single editable column
     const notesContainer = document.createElement('div');
     notesContainer.classList.add('notes-container');
 
-    const col1 = document.createElement('div');
-    col1.classList.add('notes-column');
-    col1.contentEditable = 'true';
-
-    const col2 = document.createElement('div');
-    col2.classList.add('notes-column');
-    col2.contentEditable = 'true';
+    const note = document.createElement('div');
+    note.classList.add('notes-column');
+    note.contentEditable = 'true';
 
     const saved = notesByDay[day];
     if (saved) {
-      col1.innerText = saved.col1 || '';
-      col2.innerText = saved.col2 || '';
+      note.innerText = saved.col1 || '';
     }
 
-    col1.addEventListener('input', () => {
-      if (col1.scrollHeight > col1.clientHeight) {
-        const text = col1.innerText;
-        col1.innerText = text.slice(0, -1);
-        col2.focus();
-        col2.innerText = text.slice(-1);
-        const range = document.createRange();
-        const sel = window.getSelection();
-        range.selectNodeContents(col2);
-        range.collapse(false);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-      saveNote(currentYear, currentMonthIndex, day, col1.innerText, col2.innerText);
+    note.addEventListener('input', () => {
+      saveNote(currentYear, currentMonthIndex, day, note.innerText);
     });
 
-    col2.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        col2.style.height = 'auto';
-        col2.style.alignSelf = 'flex-start';
-        const ch = col2.scrollHeight;
-        col2.style.height = '';
-        col2.style.alignSelf = '';
-        if (col2.clientHeight - ch < 18) e.preventDefault();
-      }
-    });
-
-    col2.addEventListener('input', () => {
-      col2.style.height = 'auto';
-      col2.style.alignSelf = 'flex-start';
-      const ch = col2.scrollHeight;
-      col2.style.height = '';
-      col2.style.alignSelf = '';
-      if (ch > col2.clientHeight) {
-        col2.innerText = col2.innerText.slice(0, -1);
-        const range = document.createRange();
-        const sel = window.getSelection();
-        range.selectNodeContents(col2);
-        range.collapse(false);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-      saveNote(currentYear, currentMonthIndex, day, col1.innerText, col2.innerText);
-    });
-
-    notesContainer.appendChild(col1);
-    notesContainer.appendChild(col2);
-
+    notesContainer.appendChild(note);
     cell.appendChild(notesContainer);
   }
 
@@ -990,7 +967,7 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
     container.innerHTML = '<p class="empty-events">Create or select a farm to view events.</p>';
     return;
   }
-  await loadCustomEventTypes();
+  await loadCalendarCustomEventTypes();
 
   const { data: allEvents, error } = await supabase
     .from('events')
@@ -1254,7 +1231,7 @@ async function renderYearView(year) {
     container.innerHTML = '<p class="empty-events">Create or select a farm to view events.</p>';
     return;
   }
-  await loadCustomEventTypes();
+  await loadCalendarCustomEventTypes();
 
   const { data: events, error } = await supabase
     .from('events')

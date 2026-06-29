@@ -335,14 +335,12 @@ button:hover {
 }
 
 .notes-container {
-    display: flex;
     width: 100%;
     height: 70px;
-    gap: 6px;
 }
 
 .notes-column {
-    flex: 1;
+    width: 100%;
     height: 100%;
     text-align: left;
     font-size: .75em;
@@ -350,6 +348,7 @@ button:hover {
     outline: none;
     overflow: hidden;
     word-break: break-word;
+    box-sizing: border-box;
 }
 
 /* =============================================
@@ -1015,32 +1014,38 @@ button:hover {
     background: white !important;
   }
   .year-mini-calendars {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 12px !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
     padding: 0 !important;
     background: white !important;
   }
   .mini-month {
     page-break-inside: avoid;
+    break-inside: avoid;
     border: 1px solid #ccc !important;
     background: #fff8f0 !important;
   }
   .mini-month-header {
-    padding: 7px !important;
-    font-size: 11pt !important;
+    padding: 6px !important;
+    font-size: 10pt !important;
   }
   .mini-day-name {
-    padding: 4px 0 !important;
-    font-size: 8pt !important;
+    padding: 3px 0 !important;
+    font-size: 7pt !important;
   }
   .mini-day-cell {
-    min-height: 25px !important;
-    padding: 4px 0 !important;
-    font-size: 9pt !important;
+    min-height: 22px !important;
+    padding: 3px 0 !important;
+    font-size: 8pt !important;
+  }
+  .mini-day-cell .mini-event-dot {
+    width: 5px !important;
+    height: 5px !important;
   }
   .year-view-legend {
-    margin-top: 8px !important;
-    padding-top: 8px !important;
+    margin-top: 6px !important;
+    padding-top: 6px !important;
+    font-size: 8pt !important;
   }
   ::-webkit-scrollbar {
     display: none;
@@ -1358,7 +1363,6 @@ button:hover {
 
   .notes-container {
     height: 36px;
-    gap: 3px;
   }
 
   .notes-column {
@@ -1369,6 +1373,46 @@ button:hover {
     width: 1.5em;
     height: 1.5em;
     font-size: 0.85em;
+  }
+
+  /* All Events modal: compact layout on mobile */
+  .modal-content.events-list-modal {
+    max-width: 100% !important;
+    width: calc(100% - 24px) !important;
+  }
+
+  .event-row {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 6px 0;
+    font-size: 0.85em;
+  }
+
+  .event-row .event-date {
+    min-width: 0;
+    font-size: 1em !important;
+    width: auto;
+  }
+
+  .event-row .event-type-label {
+    min-width: 0;
+  }
+
+  .event-row .event-batch-label {
+    flex: 0 0 auto;
+    width: 100%;
+    order: 10;
+    font-size: 0.85em;
+  }
+
+  .event-row button {
+    font-size: 0.78em;
+    padding: 4px 10px;
+    margin-left: auto;
+  }
+
+  .batch-group {
+    padding: 8px;
   }
 
   /* Disabled mobile nav buttons */
@@ -1390,6 +1434,93 @@ button:hover {
     max-width: 460px !important;
     padding: 20px 18px;
     box-sizing: border-box;
+  }
+
+  /* Year View on mobile: full width, compact */
+  .modal-content.year-view-modal {
+    width: calc(100% - 16px) !important;
+    max-width: 100% !important;
+    padding: 14px 10px !important;
+  }
+
+  .year-view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .year-view-header h2 {
+    font-size: 1.15em;
+  }
+
+  .year-view-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .year-view-actions button {
+    font-size: 0.75em;
+    padding: 5px 8px;
+  }
+
+  #year-view-year {
+    font-size: 1em;
+    min-width: 50px;
+  }
+
+  .year-mini-calendars {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  #year-view-content {
+    max-height: 58vh;
+    padding: 0;
+  }
+
+  .mini-month-header {
+    padding: 6px;
+    font-size: 0.85em;
+  }
+
+  .mini-grid {
+    font-size: 0.72em;
+  }
+
+  .mini-day-cell {
+    padding: 3px 0;
+    min-height: 22px;
+    font-size: 0.85em;
+  }
+
+  .mini-day-name {
+    padding: 4px 0;
+    font-size: 0.65em;
+  }
+
+  .mini-day-cell .mini-event-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  .year-view-legend {
+    gap: 6px;
+    font-size: 0.7em;
+  }
+
+  /* Date inputs: normalize on mobile to prevent overflow */
+  .big-date-input {
+    font-size: 1em !important;
+    padding: 10px 12px !important;
+    height: auto !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Custom Events Settings: reposition Create button to not overlap heading */
+  .create-btn-corner {
+    top: 20px;
+    right: 18px;
   }
 
   /* Auth pages (login/signup): inset from screen edges */
@@ -1428,6 +1559,21 @@ button:hover {
   .mobile-month-label {
     min-width: 90px;
     font-size: 0.85em;
+  }
+
+  .year-mini-calendars {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  .year-view-actions button {
+    font-size: 0.7em;
+    padding: 4px 6px;
+  }
+
+  #year-view-year {
+    min-width: 40px;
+    font-size: 0.9em;
   }
 }
 
