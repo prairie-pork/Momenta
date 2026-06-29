@@ -205,6 +205,16 @@ function updateFarmAvailability() {
     const btn = document.getElementById(id);
     if (btn) btn.disabled = !hasFarm;
   }
+  // Mobile nav buttons
+  const mobileDisabledIds = ['mobile-add-batch-btn', 'mobile-add-event-btn', 'mobile-review-btn'];
+  for (const id of mobileDisabledIds) {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.disabled = !hasFarm;
+      if (!hasFarm) btn.classList.add('mobile-nav-disabled');
+      else btn.classList.remove('mobile-nav-disabled');
+    }
+  }
 }
 
 // =============================================
@@ -556,9 +566,18 @@ async function updateCalendar() {
         const badge = document.createElement('span');
         badge.classList.add('event-badge', evt.event_type);
         badge.style.backgroundColor = style.badge;
-        badge.textContent = evt.event_type.startsWith('custom:')
-          ? style.label
-          : style.label + ' ' + evt.batch_name + ' ' + evt.batch_number;
+        if (evt.event_type.startsWith('custom:')) {
+          badge.textContent = style.label;
+        } else {
+          const typeSpan = document.createElement('span');
+          typeSpan.classList.add('badge-type');
+          typeSpan.textContent = style.label;
+          const batchSpan = document.createElement('span');
+          batchSpan.classList.add('badge-batch');
+          batchSpan.textContent = evt.batch_name + ' ' + evt.batch_number;
+          badge.appendChild(typeSpan);
+          badge.appendChild(batchSpan);
+        }
         labelsDiv.appendChild(badge);
       }
       cell.appendChild(labelsDiv);
