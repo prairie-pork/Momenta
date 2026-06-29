@@ -1313,17 +1313,26 @@ button:hover {
     overflow: hidden;
   }
 
-  /* Two-line badges on mobile */
+  /* Mobile event badges: compact by default */
   .event-badge {
     font-size: 0.58em;
     padding: 2px 4px;
-    white-space: normal;
+    white-space: nowrap;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
     line-height: 1.25;
     max-width: 100%;
     overflow: hidden;
+  }
+
+  /* First event in a cell gets two-line treatment (type + batch) */
+  .event-labels .event-badge:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    white-space: normal;
+    gap: 0;
   }
 
   .badge-type {
@@ -1331,7 +1340,13 @@ button:hover {
     white-space: nowrap;
   }
 
+  /* Badge batch: only visible on the first badge */
   .badge-batch {
+    display: none;
+  }
+
+  .event-labels .event-badge:first-child .badge-batch {
+    display: block;
     font-weight: normal;
     opacity: 0.88;
     white-space: nowrap;
@@ -1340,10 +1355,10 @@ button:hover {
     max-width: 100%;
   }
 
-  /* Long custom event names wrap with overflow hidden */
+  /* Clip labels area so cells stay fixed size */
   .event-labels {
     overflow: hidden;
-    max-height: 56px;
+    max-height: 58px;
     margin-bottom: 2px;
   }
 
@@ -1377,9 +1392,19 @@ button:hover {
   /* Modals: leave breathing room from screen edges */
   .modal-content {
     max-height: 82vh;
-    width: calc(100% - 40px);
-    max-width: 460px;
+    width: calc(100% - 40px) !important;
+    max-width: 460px !important;
     padding: 20px 18px;
+    box-sizing: border-box;
+  }
+
+  /* Auth pages (login/signup): inset from screen edges */
+  .auth-container {
+    width: calc(100% - 40px);
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 22px 18px;
+    box-sizing: border-box;
   }
 }
 
