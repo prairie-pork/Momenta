@@ -1311,11 +1311,11 @@ async function renderYearView(year) {
   container.innerHTML = html;
 }
 
-document.getElementById('year-view-btn').addEventListener('click', () => {
-  yearViewYear = currentYear;
-  renderYearView(yearViewYear);
-  showModal('year-view-modal');
-});
+document.getElementById('year-view-btn').addEventListener('click', async () => {
+    yearViewYear = currentYear;
+    await renderYearView(yearViewYear);
+    showModal('year-view-modal');
+  });
 
 document.getElementById('close-year-view').addEventListener('click', () => {
   hideModal('year-view-modal');
