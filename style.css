@@ -664,12 +664,6 @@ button:hover {
   font-size: 1em;
 }
 
-.event-row .event-batch-label {
-  color: #777;
-  font-size: 0.9em;
-  flex: 1;
-}
-
 .event-row button {
   font-size: 0.85em;
   padding: 5px 14px;
@@ -1014,8 +1008,8 @@ button:hover {
     background: white !important;
   }
   .year-mini-calendars {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 10px !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
     padding: 0 !important;
     background: white !important;
   }
@@ -1026,26 +1020,27 @@ button:hover {
     background: #fff8f0 !important;
   }
   .mini-month-header {
-    padding: 6px !important;
-    font-size: 10pt !important;
+    padding: 4px !important;
+    font-size: 8pt !important;
   }
   .mini-day-name {
-    padding: 3px 0 !important;
-    font-size: 7pt !important;
+    padding: 2px 0 !important;
+    font-size: 6pt !important;
   }
   .mini-day-cell {
-    min-height: 22px !important;
-    padding: 3px 0 !important;
-    font-size: 8pt !important;
+    min-height: 18px !important;
+    padding: 2px 0 !important;
+    font-size: 7pt !important;
   }
   .mini-day-cell .mini-event-dot {
-    width: 5px !important;
-    height: 5px !important;
+    width: 4px !important;
+    height: 4px !important;
   }
   .year-view-legend {
-    margin-top: 6px !important;
-    padding-top: 6px !important;
-    font-size: 8pt !important;
+    margin-top: 4px !important;
+    padding-top: 4px !important;
+    font-size: 6pt !important;
+    gap: 4px !important;
   }
   ::-webkit-scrollbar {
     display: none;
@@ -1324,9 +1319,6 @@ button:hover {
     padding: 2px 4px;
     white-space: nowrap;
     line-height: 1.25;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   /* Clip labels area so cells stay fixed size */
@@ -1371,13 +1363,6 @@ button:hover {
 
   .event-row .event-type-label {
     min-width: 0;
-  }
-
-  .event-row .event-batch-label {
-    flex: 0 0 auto;
-    width: 100%;
-    order: 10;
-    font-size: 0.85em;
   }
 
   .event-row button {
@@ -1429,8 +1414,8 @@ button:hover {
   }
 
   .year-view-actions {
-    width: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
   }
 
   .year-view-actions button {
@@ -1487,9 +1472,13 @@ button:hover {
   .big-date-input {
     font-size: 1em !important;
     padding: 10px 12px !important;
-    height: auto !important;
+    height: 42px !important;
+    min-height: 42px !important;
     text-align: left !important;
     box-sizing: border-box !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 100% !important;
   }
 
   /* Custom Events Settings: reposition Create button to not overlap heading */

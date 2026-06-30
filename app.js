@@ -1011,7 +1011,6 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
       html += '<div class="event-row">';
       html += '<span class="event-type-dot" style="background:' + style.badge + '"></span>';
       html += '<span class="event-type-label" style="color:' + style.badge + '">' + style.label + '</span>';
-      html += '<span class="event-batch-label">' + (g.isCustom ? '' : batchLabel) + '</span>';
       html += '<span class="event-date" style="font-size:1.15em;font-weight:bold;">' + escapeHtml(dateRange) + '</span>';
       const rescheduleLabel = g.isCustom ? g.batchName : g.batchName + ' ' + g.batchNumber;
       html += '<button data-action="reschedule" data-id="' + escapeAttr(evt.id) + '" data-type="' + escapeAttr(evt.event_type) + '" data-start="' + escapeAttr(evt.start_date) + '" data-end="' + escapeAttr(evt.end_date || '') + '" data-batch="' + escapeAttr(rescheduleLabel) + '" data-batch-name="' + batchNameAttr + '" data-batch-number="' + batchNumberAttr + '">Reschedule</button>';
