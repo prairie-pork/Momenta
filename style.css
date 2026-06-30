@@ -498,6 +498,12 @@ button:hover {
 .event-badge.vaccinate { background-color: #9632c8; }
 .event-badge.weaning   { background-color: #aa2222; }
 
+.event-badge.primary-badge {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 /* =============================================
    MODAL OVERLAY
    ============================================= */
@@ -1298,6 +1304,7 @@ button:hover {
     border-top: 1px solid #3a1800;
     z-index: 100;
     align-items: stretch;
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
 
   .mobile-nav-btn {
@@ -1385,7 +1392,7 @@ button:hover {
 
   .calendar-main {
     flex: 1;
-    padding: 10px 8px;
+    padding: 18px 8px;
     overflow-y: auto;
     padding-bottom: 72px;
   }
@@ -1393,7 +1400,6 @@ button:hover {
   .calendar-header {
     margin: 0 0 10px;
     font-size: 1.2em;
-    display: none;
   }
 
   #calendar-grid {
