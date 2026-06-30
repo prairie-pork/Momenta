@@ -1027,8 +1027,8 @@ button:hover {
     font-size: 8pt !important;
   }
   .mini-day-cell {
-    min-height: 25px !important;
-    padding: 4px 0 !important;
+    min-height: 30px !important;
+    padding: 6px 0 !important;
     font-size: 9pt !important;
   }
   .year-view-legend {
@@ -1047,6 +1047,7 @@ button:hover {
 @media print and (max-width: 900px) {
   #year-view-modal {
     width: 100% !important;
+    min-height: 0 !important;
   }
 
   .year-mini-calendars {
