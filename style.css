@@ -1509,7 +1509,7 @@ button:hover {
 
   /* Modals: leave breathing room from screen edges */
   .modal-content {
-    max-height: 82vh;
+    max-height: calc(82vh - 70px);
     width: calc(100% - 40px) !important;
     max-width: 460px !important;
     padding: 20px 18px;
@@ -1554,7 +1554,7 @@ button:hover {
   }
 
   #year-view-content {
-    max-height: 58vh;
+    max-height: calc(58vh - 70px);
     padding: 0;
   }
 
