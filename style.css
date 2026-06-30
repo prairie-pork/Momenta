@@ -783,6 +783,53 @@ button:hover {
   line-height: 1.4;
 }
 
+/* =============================================
+   FEEDBACK BUTTON
+   ============================================= */
+#feedback-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 900;
+  background: #d4cfc5;
+  color: #4a3020;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 0.82em;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  transition: background 0.15s;
+}
+#feedback-btn:hover {
+  background: #c5bfb2;
+}
+
+#feedback-fields .form-group {
+  margin-bottom: 10px;
+}
+#feedback-fields label {
+  font-weight: 600;
+  font-size: 0.85em;
+  color: #4a3020;
+  margin-bottom: 3px;
+}
+#feedback-fields textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 900px) {
+  #feedback-btn {
+    bottom: 14px;
+    right: 14px;
+    padding: 7px 15px;
+    font-size: 0.78em;
+  }
+}
+
 @media screen and (max-width: 560px) {
   .custom-type-form {
     grid-template-columns: 1fr auto;

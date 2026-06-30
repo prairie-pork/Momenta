@@ -215,7 +215,7 @@
         <div class="form-group">
           <label for="batch-name-prefix">Batch Name</label>
           <input type="text" id="batch-name-prefix" value="Batch" required>
-          <p class="batch-name-hint">Type your prefix (e.g. <strong>B26-</strong>). Add a number to start from there (e.g. <strong>B26-4</strong> starts at 4).</p>
+          <p class="batch-name-hint">The last number you type is the starting point. Example: <strong>B26-4</strong> starts at B26-4, B26-5, B26-6.</p>
         </div>
         <div class="form-group">
           <label for="batch-breed-date">First Breed Start Date</label>
@@ -414,6 +414,37 @@
 
   <div id="loading-screen">
     <p>Checking authentication...</p>
+  </div>
+
+  <!-- Feedback Button -->
+  <button id="feedback-btn" type="button" title="Send Feedback">Feedback</button>
+
+  <!-- Feedback Modal -->
+  <div id="feedback-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h2>Send Feedback</h2>
+      <form id="feedback-form" novalidate>
+        <div class="form-group">
+          <label for="feedback-type">Type</label>
+          <select id="feedback-type" required>
+            <option value="">Select one...</option>
+            <option value="Bug Report">Bug Report</option>
+            <option value="Feature Request">Feature Request</option>
+            <option value="General Feedback">General Feedback</option>
+          </select>
+        </div>
+        <div id="feedback-fields"></div>
+        <div class="form-group">
+          <label for="feedback-email">Your Email (optional, for follow-up)</label>
+          <input type="email" id="feedback-email" placeholder="you@example.com">
+        </div>
+        <div id="feedback-message" class="auth-message"></div>
+        <div class="modal-buttons">
+          <button type="submit" id="send-feedback-btn">Send</button>
+          <button type="button" id="cancel-feedback" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script src="supabase-loader.js"></script>

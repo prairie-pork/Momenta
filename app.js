@@ -739,6 +739,89 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
 });
 
 // =============================================
+// Feedback
+// =============================================
+const feedbackFields = {
+  'Bug Report': [
+    { id: 'fb-bug-what', label: 'What happened?', type: 'textarea', required: true },
+    { id: 'fb-bug-expected', label: 'What did you expect to happen?', type: 'textarea', required: false },
+    { id: 'fb-bug-steps', label: 'Steps to reproduce', type: 'textarea', required: false }
+  ],
+  'Feature Request': [
+    { id: 'fb-feature-desc', label: 'What would you like to see added?', type: 'textarea', required: true },
+    { id: 'fb-feature-why', label: 'How would this help your farm?', type: 'textarea', required: false }
+  ],
+  'General Feedback': [
+    { id: 'fb-general', label: 'Your feedback', type: 'textarea', required: true }
+  ]
+};
+
+document.getElementById('feedback-btn').addEventListener('click', () => {
+  document.getElementById('feedback-type').value = '';
+  document.getElementById('feedback-fields').innerHTML = '';
+  document.getElementById('feedback-email').value = '';
+  document.getElementById('feedback-message').className = 'auth-message';
+  document.getElementById('feedback-message').textContent = '';
+  showModal('feedback-modal');
+});
+
+document.getElementById('cancel-feedback').addEventListener('click', () => {
+  hideModal('feedback-modal');
+});
+
+document.getElementById('feedback-type').addEventListener('change', () => {
+  const type = document.getElementById('feedback-type').value;
+  const container = document.getElementById('feedback-fields');
+  container.innerHTML = '';
+  if (!type || !feedbackFields[type]) return;
+  for (const field of feedbackFields[type]) {
+    const div = document.createElement('div');
+    div.className = 'form-group';
+    const label = document.createElement('label');
+    label.textContent = field.label;
+    label.htmlFor = field.id;
+    div.appendChild(label);
+    const ta = document.createElement('textarea');
+    ta.id = field.id;
+    ta.required = field.required;
+    div.appendChild(ta);
+    container.appendChild(div);
+  }
+});
+
+document.getElementById('feedback-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('feedback-message');
+  const type = document.getElementById('feedback-type').value;
+  if (!type) {
+    msg.className = 'auth-message error';
+    msg.textContent = 'Please select a feedback type.';
+    return;
+  }
+  const fields = feedbackFields[type];
+  let body = 'Feedback Type: ' + type + '\n\n';
+  let allFilled = true;
+  for (const field of fields) {
+    const el = document.getElementById(field.id);
+    const val = el.value.trim();
+    if (field.required && !val) { allFilled = false; break; }
+    body += field.label + ':\n' + (val || '(not provided)') + '\n\n';
+  }
+  if (!allFilled) {
+    msg.className = 'auth-message error';
+    msg.textContent = 'Please fill in all required fields.';
+    return;
+  }
+  const email = document.getElementById('feedback-email').value.trim();
+  if (email) body += 'Reply-to: ' + email + '\n\n';
+
+  const subject = '[Momenta] ' + type;
+  const mailto = 'mailto:prairepork@proton.me?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body.trim());
+  window.open(mailto);
+  hideModal('feedback-modal');
+});
+
+// =============================================
 // Add Batch Modal
 // =============================================
 document.getElementById('add-batch-btn').addEventListener('click', () => {
