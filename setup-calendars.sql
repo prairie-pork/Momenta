@@ -48,8 +48,17 @@ CREATE TABLE IF NOT EXISTS batch_configs (
   vaccinate_after_farrowing INT NOT NULL DEFAULT 10,
   weaning_after_farrowing INT NOT NULL DEFAULT 23,
   batch_spacing_days INT NOT NULL DEFAULT 14,
+  batch_pattern_prefix TEXT DEFAULT '',
+  batch_pattern_suffix TEXT DEFAULT '',
+  batch_pattern_next_number INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Add these columns to batch_configs if you already ran the original schema:
+-- ALTER TABLE batch_configs
+--   ADD COLUMN IF NOT EXISTS batch_pattern_prefix TEXT DEFAULT '',
+--   ADD COLUMN IF NOT EXISTS batch_pattern_suffix TEXT DEFAULT '',
+--   ADD COLUMN IF NOT EXISTS batch_pattern_next_number INT DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS custom_event_types (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

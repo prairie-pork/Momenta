@@ -427,10 +427,51 @@ const DEFAULT_CONFIG = {
   lock_up_before_farrowing: 2,
   vaccinate_after_farrowing: 10,
   weaning_after_farrowing: 23,
-  batch_spacing_days: 14
+  batch_spacing_days: 14,
+  batch_pattern_prefix: '',
+  batch_pattern_suffix: '',
+  batch_pattern_next_number: 0
 };
 
 let currentConfig = { ...DEFAULT_CONFIG };
+
+function batchDisplayName(batchName, batchNumber) {
+  if (batchNumber == null) return batchName || '';
+  if (!batchName) return '' + batchNumber;
+  const fc = batchName[0];
+  const lc = batchName[batchName.length - 1];
+  if (/[^a-zA-Z0-9]/.test(fc)) return batchNumber + batchName;
+  if (/[^a-zA-Z0-9]/.test(lc)) return batchName + batchNumber;
+  return batchName + ' ' + batchNumber;
+}
+
+function learnBatchPattern(names) {
+  const [s1, s2, s3] = names;
+  let prefix = '';
+  for (let i = 0; i < s1.length; i++) {
+    if (s2[i] === s1[i] && s3[i] === s1[i]) prefix += s1[i];
+    else break;
+  }
+  let suffix = '';
+  for (let i = 0; i < s1.length; i++) {
+    const ci = s1.length - 1 - i;
+    if (s2[s2.length - 1 - i] === s1[ci] && s3[s3.length - 1 - i] === s1[ci])
+      suffix = s1[ci] + suffix;
+    else break;
+  }
+  const middles = names.map(n => n.substring(prefix.length, n.length - suffix.length));
+  const numbers = middles.map(m => { const r = m.match(/\d+/); return r ? parseInt(r[0]) : null; });
+  if (numbers.includes(null) || numbers[0] + 1 !== numbers[1] || numbers[1] + 1 !== numbers[2])
+    return null;
+  const middle = middles[0];
+  const numStr = numbers[0].toString();
+  const numIdx = middle.indexOf(numStr);
+  return {
+    prefix: prefix + middle.substring(0, numIdx),
+    suffix: middle.substring(numIdx + numStr.length) + suffix,
+    nextNumber: numbers[2] + 1
+  };
+}
 
 async function loadConfig() {
   const { data, error } = await supabase
@@ -446,7 +487,10 @@ async function loadConfig() {
       lock_up_before_farrowing: data.lock_up_before_farrowing,
       vaccinate_after_farrowing: data.vaccinate_after_farrowing,
       weaning_after_farrowing: data.weaning_after_farrowing,
-      batch_spacing_days: data.batch_spacing_days
+      batch_spacing_days: data.batch_spacing_days,
+      batch_pattern_prefix: data.batch_pattern_prefix || '',
+      batch_pattern_suffix: data.batch_pattern_suffix || '',
+      batch_pattern_next_number: data.batch_pattern_next_number || 0
     };
   }
 }
@@ -461,7 +505,10 @@ async function saveConfig(config) {
       lock_up_before_farrowing: config.lock_up_before_farrowing,
       vaccinate_after_farrowing: config.vaccinate_after_farrowing,
       weaning_after_farrowing: config.weaning_after_farrowing,
-      batch_spacing_days: config.batch_spacing_days
+      batch_spacing_days: config.batch_spacing_days,
+      batch_pattern_prefix: config.batch_pattern_prefix || '',
+      batch_pattern_suffix: config.batch_pattern_suffix || '',
+      batch_pattern_next_number: config.batch_pattern_next_number || 0
     }, { onConflict: 'user_id' });
   if (error) throw error;
 }
@@ -599,7 +646,7 @@ async function updateCalendar() {
           const typeSpan = document.createElement('span');
           typeSpan.textContent = style.label;
           const batchSpan = document.createElement('span');
-          batchSpan.textContent = evt.batch_name + ' ' + evt.batch_number;
+          batchSpan.textContent = batchDisplayName(evt.batch_name, evt.batch_number);
           badge.appendChild(typeSpan);
           badge.appendChild(batchSpan);
         } else if (isCustom) {
@@ -692,7 +739,55 @@ document.getElementById('settings-btn').addEventListener('click', () => {
   document.getElementById('set-spacing').value = currentConfig.batch_spacing_days;
   document.getElementById('settings-message').className = 'auth-message';
   document.getElementById('settings-message').textContent = '';
+  const prefix = currentConfig.batch_pattern_prefix || '';
+  const suffix = currentConfig.batch_pattern_suffix || '';
+  const nextNum = currentConfig.batch_pattern_next_number || 0;
+  if (nextNum > 0) {
+    document.getElementById('batch-example-1').value = prefix + (nextNum - 3) + suffix;
+    document.getElementById('batch-example-2').value = prefix + (nextNum - 2) + suffix;
+    document.getElementById('batch-example-3').value = prefix + (nextNum - 1) + suffix;
+    document.getElementById('batch-pattern-result').textContent = 'Pattern: "' + prefix + 'N' + suffix + '"  Next: ' + prefix + nextNum + suffix;
+    document.getElementById('batch-pattern-result').style.display = 'block';
+  } else {
+    document.getElementById('batch-example-1').value = '';
+    document.getElementById('batch-example-2').value = '';
+    document.getElementById('batch-example-3').value = '';
+    document.getElementById('batch-pattern-result').style.display = 'none';
+  }
+  document.getElementById('batch-pattern-status').textContent = '';
   showModal('settings-modal');
+});
+
+document.getElementById('learn-batch-pattern-btn').addEventListener('click', () => {
+  const s1 = document.getElementById('batch-example-1').value.trim();
+  const s2 = document.getElementById('batch-example-2').value.trim();
+  const s3 = document.getElementById('batch-example-3').value.trim();
+  const status = document.getElementById('batch-pattern-status');
+  const result = document.getElementById('batch-pattern-result');
+
+  if (!s1 || !s2 || !s3) {
+    status.className = 'batch-pattern-status error';
+    status.textContent = 'Please enter all 3 batch names.';
+    result.style.display = 'none';
+    return;
+  }
+
+  const pattern = learnBatchPattern([s1, s2, s3]);
+  if (!pattern) {
+    status.className = 'batch-pattern-status error';
+    status.textContent = 'Could not detect a pattern. Make sure batch numbers increment by 1 (e.g. B26-1, B26-2, B26-3).';
+    result.style.display = 'none';
+    return;
+  }
+
+  currentConfig.batch_pattern_prefix = pattern.prefix;
+  currentConfig.batch_pattern_suffix = pattern.suffix;
+  currentConfig.batch_pattern_next_number = pattern.nextNumber;
+
+  status.className = 'batch-pattern-status success';
+  status.textContent = 'Pattern learned! Save settings to apply.';
+  result.style.display = 'block';
+  result.innerHTML = '<strong>Pattern:</strong> "' + escapeHtml(pattern.prefix) + 'N' + escapeHtml(pattern.suffix) + '"<br><strong>Next batch:</strong> ' + escapeHtml(pattern.prefix + pattern.nextNumber + pattern.suffix);
 });
 
 document.getElementById('cancel-settings').addEventListener('click', () => {
@@ -709,7 +804,10 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     lock_up_before_farrowing: parseInt(document.getElementById('set-lockup').value),
     vaccinate_after_farrowing: parseInt(document.getElementById('set-vaccinate').value),
     weaning_after_farrowing: parseInt(document.getElementById('set-weaning').value),
-    batch_spacing_days: parseInt(document.getElementById('set-spacing').value)
+    batch_spacing_days: parseInt(document.getElementById('set-spacing').value),
+    batch_pattern_prefix: currentConfig.batch_pattern_prefix || '',
+    batch_pattern_suffix: currentConfig.batch_pattern_suffix || '',
+    batch_pattern_next_number: currentConfig.batch_pattern_next_number || 0
   };
   btn.disabled = true;
   btn.textContent = 'Saving...';
@@ -732,10 +830,18 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
 // Add Batch Modal
 // =============================================
 document.getElementById('add-batch-btn').addEventListener('click', () => {
-  // Set default date to today
   const today = new Date();
   document.getElementById('batch-breed-date').value = fmtDate(today);
-  document.getElementById('batch-name-prefix').value = 'Batch';
+  const nextNum = currentConfig.batch_pattern_next_number || 0;
+  const prefix = currentConfig.batch_pattern_prefix || '';
+  const suffix = currentConfig.batch_pattern_suffix || '';
+  if (nextNum > 0 && prefix) {
+    document.getElementById('batch-name-prefix').value = prefix + nextNum + suffix;
+  } else if (nextNum > 0 && suffix) {
+    document.getElementById('batch-name-prefix').value = prefix + nextNum + suffix;
+  } else {
+    document.getElementById('batch-name-prefix').value = 'Batch';
+  }
   document.getElementById('batch-count').value = 1;
   document.getElementById('batch-message').className = 'auth-message';
   document.getElementById('batch-message').textContent = '';
@@ -863,12 +969,30 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
     return;
   }
 
-  // Extract starting number if user typed e.g. "Batch 4"
+  // Extract starting number using learned pattern or fallback parsing
   let startBatchNumber = 1;
-  const numberMatch = namePrefix.match(/^(.+?)\s+(\d+)$/);
-  if (numberMatch) {
-    namePrefix = numberMatch[1];
-    startBatchNumber = parseInt(numberMatch[2]);
+  const patPrefix = currentConfig.batch_pattern_prefix || '';
+  const patSuffix = currentConfig.batch_pattern_suffix || '';
+  if (patPrefix && namePrefix.startsWith(patPrefix)) {
+    const rest = namePrefix.slice(patPrefix.length);
+    const num = parseInt(rest);
+    if (!isNaN(num)) {
+      namePrefix = patPrefix;
+      startBatchNumber = num;
+    }
+  } else if (patSuffix && namePrefix.endsWith(patSuffix) && patPrefix === '') {
+    const rest = namePrefix.slice(0, -patSuffix.length);
+    const num = parseInt(rest);
+    if (!isNaN(num)) {
+      namePrefix = patSuffix;
+      startBatchNumber = num;
+    }
+  } else {
+    const numberMatch = namePrefix.match(/^(.+?)\s+(\d+)$/);
+    if (numberMatch) {
+      namePrefix = numberMatch[1];
+      startBatchNumber = parseInt(numberMatch[2]);
+    }
   }
   if (!breedDate) {
     msg.className = 'auth-message error';
@@ -920,7 +1044,7 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
           const exStart = ex.start_date;
           const exEnd = ex.end_date || ex.start_date;
           if (dateStr >= exStart && dateStr <= exEnd) {
-            conflictMsg = 'Date ' + dateStr + ' conflicts with ' + ex.batch_name + ' ' + ex.batch_number;
+            conflictMsg = 'Date ' + dateStr + ' conflicts with ' + batchDisplayName(ex.batch_name, ex.batch_number);
             break;
           }
         }
@@ -939,6 +1063,16 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
 
     const events = calcBatchEvents(currentConfig, breedDate, namePrefix, batchCount, startBatchNumber);
     await saveBatchEvents(events);
+
+    // Update next batch number in config
+    if (currentConfig.batch_pattern_prefix || currentConfig.batch_pattern_suffix) {
+      currentConfig.batch_pattern_next_number = startBatchNumber + batchCount;
+      try {
+        await supabase.from('batch_configs').update({
+          batch_pattern_next_number: currentConfig.batch_pattern_next_number
+        }).eq('user_id', user.id);
+      } catch (e) { console.warn('Could not update batch next number:', e); }
+    }
 
     msg.className = 'auth-message success';
     msg.textContent = batchCount + ' batch(es) generated! (' + events.length + ' events)';
@@ -998,7 +1132,7 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
     const g = groups[key];
     const breedEvt = g.events.find(e => e.event_type === 'breed') || g.events[0];
     const breedDate = breedEvt ? breedEvt.start_date : '?';
-    const batchLabel = escapeHtml(g.batchName + ' ' + g.batchNumber);
+    const batchLabel = escapeHtml(batchDisplayName(g.batchName, g.batchNumber));
     const batchNameAttr = escapeAttr(g.batchName);
     const batchNumberAttr = escapeAttr(g.batchNumber);
 
@@ -1018,7 +1152,7 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
       html += '<span class="event-type-dot" style="background:' + style.badge + '"></span>';
       html += '<span class="event-type-label" style="color:' + style.badge + '">' + style.label + '</span>';
       html += '<span class="event-date" style="font-size:1.15em;font-weight:bold;">' + escapeHtml(dateRange) + '</span>';
-      const rescheduleLabel = g.isCustom ? g.batchName : g.batchName + ' ' + g.batchNumber;
+      const rescheduleLabel = g.isCustom ? g.batchName : batchDisplayName(g.batchName, g.batchNumber);
       html += '<button data-action="reschedule" data-id="' + escapeAttr(evt.id) + '" data-type="' + escapeAttr(evt.event_type) + '" data-start="' + escapeAttr(evt.start_date) + '" data-end="' + escapeAttr(evt.end_date || '') + '" data-batch="' + escapeAttr(rescheduleLabel) + '" data-batch-name="' + batchNameAttr + '" data-batch-number="' + batchNumberAttr + '">Reschedule</button>';
       html += '</div>';
     }

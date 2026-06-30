@@ -773,6 +773,53 @@ button:hover {
   flex-shrink: 0;
 }
 
+/* =============================================
+   BATCH NAMING PATTERN
+   ============================================= */
+.settings-divider {
+  border: none;
+  border-top: 1px solid #eadfce;
+  margin: 18px 0;
+}
+
+#settings-form h3 {
+  margin: 0 0 6px;
+  font-size: 1em;
+  color: #4a3020;
+}
+
+.batch-pattern-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.batch-pattern-inputs input {
+  margin: 0;
+  text-align: center;
+}
+
+.batch-pattern-status {
+  font-size: 0.85em;
+  margin: 6px 0;
+}
+.batch-pattern-status.error {
+  color: #c0392b;
+}
+.batch-pattern-status.success {
+  color: #27ae60;
+}
+
+.batch-pattern-result {
+  font-size: 0.9em;
+  padding: 10px 12px;
+  background: #f0f7e6;
+  border: 1px solid #c8dba0;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
 @media screen and (max-width: 560px) {
   .custom-type-form {
     grid-template-columns: 1fr auto;

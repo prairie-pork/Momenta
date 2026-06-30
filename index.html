@@ -308,6 +308,17 @@
           <label for="set-spacing">Days Between Batches</label>
           <input type="number" id="set-spacing" value="14" min="7" max="60">
         </div>
+        <div class="settings-divider"></div>
+        <h3>Batch Naming</h3>
+        <p class="modal-note">Enter 3 existing batch names so the program learns your naming pattern.</p>
+        <div class="batch-pattern-inputs">
+          <input type="text" id="batch-example-1" placeholder="e.g. B26-1">
+          <input type="text" id="batch-example-2" placeholder="e.g. B26-2">
+          <input type="text" id="batch-example-3" placeholder="e.g. B26-3">
+        </div>
+        <div id="batch-pattern-status" class="batch-pattern-status"></div>
+        <button type="button" id="learn-batch-pattern-btn" class="btn-secondary">Learn Pattern</button>
+        <div class="batch-pattern-result" id="batch-pattern-result" style="display:none"></div>
         <div id="settings-message" class="auth-message"></div>
         <div class="modal-buttons">
           <button type="submit" id="save-settings-btn">Save Settings</button>
