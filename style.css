@@ -793,9 +793,9 @@ button:hover {
    FEEDBACK
    ============================================= */
 .feedback-trigger {
-  background: rgba(184, 153, 76, 0.25) !important;
-  color: #e8cc6a !important;
+  color: #d4c0a8;
 }
+
 .sidebar-btn.feedback-trigger {
   background: #dccaa0 !important;
   color: #4a3020 !important;
@@ -1317,24 +1317,22 @@ button:hover {
     align-items: center;
     justify-content: center;
     gap: 2px;
-    background: rgba(25, 8, 0, 0.82);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-    border: none;
-    color: #b89a80;
+    background: #2a1d12;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #d4c0a8;
     font-size: 0.5em;
     padding: 6px 4px;
     cursor: pointer;
     border-radius: 14px;
     transition: background 0.15s, color 0.15s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     min-width: 0;
     overflow: hidden;
   }
   .mobile-nav-btn:hover,
   .mobile-nav-btn.active {
-    color: #ffe4c4;
-    background: rgba(25, 8, 0, 0.92);
+    color: #fff0dc;
+    background: #3a2a1a;
   }
   .mobile-nav-btn svg {
     width: 20px;
