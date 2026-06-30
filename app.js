@@ -594,11 +594,17 @@ async function updateCalendar() {
         badge.style.backgroundColor = style.badge;
         const isCustom = evt.event_type.startsWith('custom:');
         if (!isCustom && !primaryBadgeRendered) {
-          // First standard event: single-line badge (e.g. "Breed Batch 1")
           primaryBadgeRendered = true;
-          badge.textContent = style.label + ' ' + evt.batch_name + ' ' + evt.batch_number;
+          badge.classList.add('primary-badge');
+          const typeSpan = document.createElement('span');
+          typeSpan.textContent = style.label;
+          const batchSpan = document.createElement('span');
+          batchSpan.textContent = evt.batch_name + ' ' + evt.batch_number;
+          badge.appendChild(typeSpan);
+          badge.appendChild(batchSpan);
+        } else if (isCustom) {
+          badge.textContent = style.label;
         } else {
-          // Custom events and subsequent standard events: compact single line
           badge.textContent = style.label;
         }
         labelsDiv.appendChild(badge);

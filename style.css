@@ -1313,23 +1313,32 @@ button:hover {
     overflow: hidden;
   }
 
-  /* Mobile event badges: compact by default */
+  /* Mobile event badges: compact, wrap if long */
   .event-badge {
     font-size: 0.58em;
     padding: 2px 4px;
-    white-space: nowrap;
+    white-space: normal;
     line-height: 1.25;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    word-break: break-word;
   }
 
-  /* Clip labels area so cells stay fixed size */
+  /* Primary default event: type on first line, batch on second */
+  .event-badge.primary-badge {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+
   .event-labels {
-    overflow: hidden;
-    max-height: 58px;
     margin-bottom: 2px;
   }
 
   .notes-container {
-    height: 36px;
+    height: 22px;
   }
 
   .notes-column {
@@ -1512,11 +1521,10 @@ button:hover {
   }
 
   .notes-container {
-    height: 28px;
+    height: 18px;
   }
 
   .event-labels {
-    max-height: 44px;
     margin-bottom: 2px;
   }
 
