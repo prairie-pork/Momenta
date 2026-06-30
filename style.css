@@ -773,7 +773,7 @@ button:hover {
   flex-shrink: 0;
 }
 
-@media (max-width: 560px) {
+@media screen and (max-width: 560px) {
   .custom-type-form {
     grid-template-columns: 1fr;
   }
@@ -842,13 +842,13 @@ button:hover {
   background: white;
 }
 
-@media (max-width: 1100px) {
+@media screen and (max-width: 1100px) {
   .year-mini-calendars {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (max-width: 700px) {
+@media screen and (max-width: 700px) {
   .year-mini-calendars {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -970,8 +970,8 @@ button:hover {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
-    width: 100% !important;
-    min-height: 100% !important;
+    width: 100vw !important;
+    min-height: 100vh !important;
     display: block !important;
     background: white !important;
     overflow: visible !important;
@@ -1045,6 +1045,10 @@ button:hover {
    ============================================= */
 
 @media print and (max-width: 900px) {
+  #year-view-modal {
+    width: 100% !important;
+  }
+
   .year-mini-calendars {
     gap: 6px !important;
   }
@@ -1142,7 +1146,7 @@ button:hover {
    MOBILE RESPONSIVE
    ============================================= */
 
-@media (max-width: 900px) {
+@media screen and (max-width: 900px) {
 
   /* Hide desktop sidebar entirely */
   .sidebar {
@@ -1536,7 +1540,7 @@ button:hover {
   }
 }
 
-@media (max-width: 480px) {
+@media screen and (max-width: 480px) {
   .day-cell {
     height: 76px;
     min-height: 76px;
