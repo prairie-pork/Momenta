@@ -756,13 +756,15 @@ const feedbackFields = {
   ]
 };
 
-document.getElementById('feedback-btn').addEventListener('click', () => {
+document.querySelectorAll('.feedback-trigger').forEach(btn => {
+  btn.addEventListener('click', () => {
   document.getElementById('feedback-type').value = '';
   document.getElementById('feedback-fields').innerHTML = '';
   document.getElementById('feedback-email').value = '';
   document.getElementById('feedback-message').className = 'auth-message';
   document.getElementById('feedback-message').textContent = '';
   showModal('feedback-modal');
+  });
 });
 
 document.getElementById('cancel-feedback').addEventListener('click', () => {
