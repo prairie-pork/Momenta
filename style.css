@@ -783,7 +783,7 @@ button:hover {
   }
 
   .custom-days-field {
-    margin: 6px 0;
+    margin-top: 14px;
   }
 
   .custom-days-field input {
@@ -791,6 +791,7 @@ button:hover {
   }
 
   .color-swatch-row {
+    margin-top: 14px;
     grid-template-columns: repeat(6, 24px);
   }
 }
