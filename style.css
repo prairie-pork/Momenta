@@ -992,15 +992,14 @@ button:hover {
   .year-view-actions button {
     display: none !important;
   }
-  .year-view-header h2,
-  #year-view-year {
-    display: none !important;
-  }
   .year-view-header {
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 0 !important;
-    overflow: hidden !important;
+    margin-bottom: 10px !important;
+  }
+  .year-view-header h2 {
+    font-size: 18pt !important;
+  }
+  #year-view-year {
+    font-size: 16pt !important;
   }
   #year-view-content {
     max-height: none !important;
@@ -1010,46 +1009,71 @@ button:hover {
   }
   .year-mini-calendars {
     grid-template-columns: repeat(4, 1fr) !important;
-    column-gap: 4px !important;
-    row-gap: 2px !important;
+    gap: 12px !important;
     padding: 0 !important;
     background: white !important;
   }
   .mini-month {
     page-break-inside: avoid;
-    break-inside: avoid;
-    border: 0.5pt solid #ccc !important;
-    border-radius: 0 !important;
+    border: 1px solid #ccc !important;
     background: #fff8f0 !important;
   }
   .mini-month-header {
-    padding: 2px 3px !important;
-    font-size: 7pt !important;
-    line-height: 1.2 !important;
+    padding: 7px !important;
+    font-size: 11pt !important;
   }
   .mini-day-name {
-    padding: 1px 0 !important;
-    font-size: 5.5pt !important;
+    padding: 4px 0 !important;
+    font-size: 8pt !important;
   }
   .mini-day-cell {
-    min-height: 14px !important;
-    padding: 1px 0 !important;
-    font-size: 6.5pt !important;
-    line-height: 1.1 !important;
-  }
-  .mini-day-cell .mini-event-dot {
-    width: 3px !important;
-    height: 3px !important;
+    min-height: 25px !important;
+    padding: 4px 0 !important;
+    font-size: 9pt !important;
   }
   .year-view-legend {
-    margin-top: 2px !important;
-    padding-top: 2px !important;
-    font-size: 5.5pt !important;
-    gap: 2px 4px !important;
-    line-height: 1.2 !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
   }
   ::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* =============================================
+   MOBILE PRINT OVERRIDES (fit all 12 months on 1 page)
+   ============================================= */
+
+@media print and (max-width: 900px) {
+  .year-mini-calendars {
+    gap: 6px !important;
+  }
+
+  .mini-month-header {
+    padding: 4px !important;
+    font-size: 8pt !important;
+  }
+
+  .mini-day-name {
+    padding: 2px 0 !important;
+    font-size: 6pt !important;
+  }
+
+  .mini-day-cell {
+    min-height: 16px !important;
+    padding: 2px 0 !important;
+    font-size: 7pt !important;
+  }
+
+  .mini-day-cell .mini-event-dot {
+    width: 4px !important;
+    height: 4px !important;
+  }
+
+  .year-view-legend {
+    margin-top: 4px !important;
+    padding-top: 4px !important;
+    font-size: 7pt !important;
   }
 }
 
