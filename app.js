@@ -748,7 +748,7 @@ const feedbackFields = {
     { id: 'fb-bug-steps', label: 'Steps to reproduce', type: 'textarea', required: false }
   ],
   'Feature Request': [
-    { id: 'fb-feature-desc', label: 'What would you like to see added?', type: 'textarea', required: true },
+    { id: 'fb-feature-desc', label: 'What would you like to see added', type: 'textarea', required: true },
     { id: 'fb-feature-why', label: 'How would this help your farm?', type: 'textarea', required: false }
   ],
   'General Feedback': [

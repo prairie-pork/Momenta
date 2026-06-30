@@ -787,7 +787,15 @@ button:hover {
    FEEDBACK
    ============================================= */
 .feedback-trigger {
-  color: #b8994c !important;
+  background: rgba(184, 153, 76, 0.18) !important;
+  color: #d4b86a !important;
+}
+.sidebar-btn.feedback-trigger {
+  background: #dccaa0 !important;
+  color: #4a3020 !important;
+}
+.sidebar-btn.feedback-trigger:hover {
+  background: #d0bc8e !important;
 }
 
 #feedback-fields .form-group {
