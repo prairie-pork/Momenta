@@ -782,6 +782,10 @@ button:hover {
     grid-column: 1 / -1;
   }
 
+  .custom-days-field {
+    margin: 6px 0;
+  }
+
   .custom-days-field input {
     text-align: center;
   }
@@ -1548,7 +1552,11 @@ button:hover {
   }
 
   .custom-events-modal .modal-note {
-    padding-right: 60px;
+    padding-right: 70px;
+  }
+
+  .custom-events-modal h2 {
+    padding-right: 70px;
   }
 
   /* Auth pages (login/signup): inset from screen edges */
