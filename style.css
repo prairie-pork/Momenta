@@ -1299,12 +1299,13 @@ button:hover {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 62px;
     background-color: #190800;
     border-top: 1px solid #3a1800;
     z-index: 100;
     align-items: stretch;
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    height: calc(62px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
   }
 
   .mobile-nav-btn {
@@ -1313,15 +1314,17 @@ button:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 2px;
     background: transparent;
     border: none;
     color: #b89a80;
-    font-size: 0.6em;
-    padding: 6px 0;
+    font-size: 0.55em;
+    padding: 4px 2px;
     cursor: pointer;
     border-radius: 0;
     transition: color 0.15s, background 0.15s;
+    min-width: 0;
+    overflow: hidden;
   }
   .mobile-nav-btn:hover,
   .mobile-nav-btn.active {
@@ -1449,9 +1452,9 @@ button:hover {
   }
 
   .today-cell .day-number {
-    width: 1.5em;
-    height: 1.5em;
-    font-size: 0.85em;
+    width: 1.3em;
+    height: 1.3em;
+    font-size: 0.88em;
   }
 
   /* All Events modal: compact layout on mobile */
@@ -1629,6 +1632,12 @@ button:hover {
   .day-number {
     font-size: 0.72em;
     margin-bottom: 2px;
+  }
+
+  .today-cell .day-number {
+    width: 1.2em;
+    height: 1.2em;
+    font-size: 0.72em;
   }
 
   .notes-container {
