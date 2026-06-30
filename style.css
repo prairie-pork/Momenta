@@ -1323,35 +1323,10 @@ button:hover {
     font-size: 0.58em;
     padding: 2px 4px;
     white-space: nowrap;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 2px;
     line-height: 1.25;
     max-width: 100%;
     overflow: hidden;
-  }
-
-  /* Primary badge (first non-custom event): two-line treatment */
-  .event-badge.primary-badge {
-    flex-direction: column;
-    align-items: flex-start;
-    white-space: normal;
-    gap: 0;
-  }
-
-  .badge-type {
-    font-weight: bold;
-    white-space: nowrap;
-  }
-
-  .badge-batch {
-    font-weight: normal;
-    opacity: 0.88;
-    white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
   }
 
   /* Clip labels area so cells stay fixed size */
