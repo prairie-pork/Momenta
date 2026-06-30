@@ -793,8 +793,8 @@ button:hover {
    FEEDBACK
    ============================================= */
 .feedback-trigger {
-  background: rgba(184, 153, 76, 0.18) !important;
-  color: #d4b86a !important;
+  background: rgba(184, 153, 76, 0.25) !important;
+  color: #e8cc6a !important;
 }
 .sidebar-btn.feedback-trigger {
   background: #dccaa0 !important;
@@ -1299,43 +1299,46 @@ button:hover {
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: #190800;
-    border-top: 1px solid #3a1800;
     z-index: 100;
-    align-items: stretch;
-    height: calc(62px + env(safe-area-inset-bottom, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    padding-left: env(safe-area-inset-left, 0px);
-    padding-right: env(safe-area-inset-right, 0px);
+    justify-content: center;
+    gap: 6px;
+    padding: 8px max(env(safe-area-inset-right, 0px), 8px)
+             calc(10px + env(safe-area-inset-bottom, 0px))
+             max(env(safe-area-inset-left, 0px), 8px);
+    background: transparent;
     box-sizing: border-box;
   }
 
   .mobile-nav-btn {
     flex: 1;
+    max-width: 80px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 2px;
-    background: transparent;
+    background: rgba(25, 8, 0, 0.82);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
     border: none;
     color: #b89a80;
-    font-size: 0.55em;
-    padding: 4px 2px;
+    font-size: 0.5em;
+    padding: 6px 4px;
     cursor: pointer;
-    border-radius: 0;
-    transition: color 0.15s, background 0.15s;
+    border-radius: 14px;
+    transition: background 0.15s, color 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     min-width: 0;
     overflow: hidden;
   }
   .mobile-nav-btn:hover,
   .mobile-nav-btn.active {
     color: #ffe4c4;
-    background: rgba(255,228,196,0.08);
+    background: rgba(25, 8, 0, 0.92);
   }
   .mobile-nav-btn svg {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
   }
 
@@ -1399,7 +1402,7 @@ button:hover {
     flex: 1;
     padding: 18px 8px;
     overflow-y: auto;
-    padding-bottom: 72px;
+    padding-bottom: 80px;
   }
 
   .calendar-header {
