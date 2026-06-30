@@ -481,7 +481,7 @@ button:hover {
 
 .event-badge {
   font-size: 0.75em;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 3px;
   font-weight: bold;
   white-space: nowrap;
@@ -1305,6 +1305,8 @@ button:hover {
     align-items: stretch;
     height: calc(62px + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
     box-sizing: border-box;
   }
 
@@ -1452,9 +1454,9 @@ button:hover {
   }
 
   .today-cell .day-number {
-    width: 1.3em;
-    height: 1.3em;
-    font-size: 0.88em;
+    width: 1.5em;
+    height: 1.5em;
+    font-size: 0.85em;
   }
 
   /* All Events modal: compact layout on mobile */
@@ -1632,12 +1634,6 @@ button:hover {
   .day-number {
     font-size: 0.72em;
     margin-bottom: 2px;
-  }
-
-  .today-cell .day-number {
-    width: 1.2em;
-    height: 1.2em;
-    font-size: 0.72em;
   }
 
   .notes-container {
