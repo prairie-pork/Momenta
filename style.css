@@ -774,52 +774,13 @@ button:hover {
 }
 
 /* =============================================
-   BATCH NAMING PATTERN
+   BATCH NAMING HINT
    ============================================= */
-.pattern-trainer {
-  margin-top: 8px;
-}
-
-.pattern-trainer-inputs {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.pattern-input {
-  flex: 1;
-  min-width: 0;
-  text-align: center;
-  font-size: 0.85em !important;
-  padding: 6px 8px !important;
-  margin: 0 !important;
-}
-
-.pattern-learn-btn {
-  flex-shrink: 0;
-  font-size: 0.85em !important;
-  padding: 6px 14px !important;
-  white-space: nowrap;
-}
-
-.batch-pattern-status {
-  font-size: 0.82em;
+.batch-name-hint {
+  font-size: 0.8em;
+  color: #888;
   margin: 4px 0 0;
-}
-.batch-pattern-status.error {
-  color: #c0392b;
-}
-.batch-pattern-status.success {
-  color: #27ae60;
-}
-
-.batch-pattern-result {
-  font-size: 0.85em;
-  padding: 6px 10px;
-  background: #f0f7e6;
-  border: 1px solid #c8dba0;
-  border-radius: 6px;
-  margin: 6px 0 0;
+  line-height: 1.4;
 }
 
 @media screen and (max-width: 560px) {
@@ -842,17 +803,6 @@ button:hover {
   .color-swatch-row {
     margin-top: 14px;
     grid-template-columns: repeat(6, 24px);
-  }
-
-  .pattern-trainer-inputs {
-    flex-wrap: wrap;
-  }
-  .pattern-input {
-    flex: 1 1 70px;
-    min-width: 60px;
-  }
-  .pattern-learn-btn {
-    flex: 1 1 100%;
   }
 }
 

@@ -427,10 +427,7 @@ const DEFAULT_CONFIG = {
   lock_up_before_farrowing: 2,
   vaccinate_after_farrowing: 10,
   weaning_after_farrowing: 23,
-  batch_spacing_days: 14,
-  batch_pattern_prefix: '',
-  batch_pattern_suffix: '',
-  batch_pattern_next_number: 0
+  batch_spacing_days: 14
 };
 
 let currentConfig = { ...DEFAULT_CONFIG };
@@ -443,35 +440,6 @@ function batchDisplayName(batchName, batchNumber) {
   if (/[^a-zA-Z0-9]/.test(fc)) return batchNumber + batchName;
   if (/[^a-zA-Z0-9]/.test(lc)) return batchName + batchNumber;
   return batchName + ' ' + batchNumber;
-}
-
-function learnBatchPattern(names) {
-  const [s1, s2, s3] = names;
-  const lc1 = s1.toLowerCase(), lc2 = s2.toLowerCase(), lc3 = s3.toLowerCase();
-  let prefix = '';
-  for (let i = 0; i < s1.length; i++) {
-    if (lc2[i] === lc1[i] && lc3[i] === lc1[i]) prefix += s1[i];
-    else break;
-  }
-  let suffix = '';
-  for (let i = 0; i < s1.length; i++) {
-    const ci = s1.length - 1 - i;
-    if (lc2[lc2.length - 1 - i] === lc1[ci] && lc3[lc3.length - 1 - i] === lc1[ci])
-      suffix = s1[ci] + suffix;
-    else break;
-  }
-  const middles = names.map(n => n.substring(prefix.length, n.length - suffix.length));
-  const numbers = middles.map(m => { const r = m.match(/\d+/); return r ? parseInt(r[0]) : null; });
-  if (numbers.includes(null) || numbers[0] + 1 !== numbers[1] || numbers[1] + 1 !== numbers[2])
-    return null;
-  const middle = middles[0];
-  const numStr = numbers[0].toString();
-  const numIdx = middle.indexOf(numStr);
-  return {
-    prefix: prefix + middle.substring(0, numIdx),
-    suffix: middle.substring(numIdx + numStr.length) + suffix,
-    nextNumber: numbers[2] + 1
-  };
 }
 
 async function loadConfig() {
@@ -488,10 +456,7 @@ async function loadConfig() {
       lock_up_before_farrowing: data.lock_up_before_farrowing,
       vaccinate_after_farrowing: data.vaccinate_after_farrowing,
       weaning_after_farrowing: data.weaning_after_farrowing,
-      batch_spacing_days: data.batch_spacing_days,
-      batch_pattern_prefix: data.batch_pattern_prefix || '',
-      batch_pattern_suffix: data.batch_pattern_suffix || '',
-      batch_pattern_next_number: data.batch_pattern_next_number || 0
+      batch_spacing_days: data.batch_spacing_days
     };
   }
 }
@@ -506,10 +471,7 @@ async function saveConfig(config) {
       lock_up_before_farrowing: config.lock_up_before_farrowing,
       vaccinate_after_farrowing: config.vaccinate_after_farrowing,
       weaning_after_farrowing: config.weaning_after_farrowing,
-      batch_spacing_days: config.batch_spacing_days,
-      batch_pattern_prefix: config.batch_pattern_prefix || '',
-      batch_pattern_suffix: config.batch_pattern_suffix || '',
-      batch_pattern_next_number: config.batch_pattern_next_number || 0
+      batch_spacing_days: config.batch_spacing_days
     }, { onConflict: 'user_id' });
   if (error) throw error;
 }
@@ -743,48 +705,6 @@ document.getElementById('settings-btn').addEventListener('click', () => {
   showModal('settings-modal');
 });
 
-document.getElementById('learn-batch-pattern-btn').addEventListener('click', async () => {
-  const s1 = document.getElementById('batch-example-1').value.trim();
-  const s2 = document.getElementById('batch-example-2').value.trim();
-  const s3 = document.getElementById('batch-example-3').value.trim();
-  const status = document.getElementById('batch-pattern-status');
-  const result = document.getElementById('batch-pattern-result');
-
-  if (!s1 || !s2 || !s3) {
-    status.className = 'batch-pattern-status error';
-    status.textContent = 'Enter all 3 names.';
-    result.style.display = 'none';
-    return;
-  }
-
-  const pattern = learnBatchPattern([s1, s2, s3]);
-  if (!pattern) {
-    status.className = 'batch-pattern-status error';
-    status.textContent = 'Names must increment by 1 (e.g. B26-1, B26-2, B26-3).';
-    result.style.display = 'none';
-    return;
-  }
-
-  currentConfig.batch_pattern_prefix = pattern.prefix;
-  currentConfig.batch_pattern_suffix = pattern.suffix;
-  currentConfig.batch_pattern_next_number = pattern.nextNumber;
-
-  status.className = 'batch-pattern-status success';
-  status.textContent = 'Pattern saved.';
-  result.style.display = 'block';
-  result.innerHTML = '<strong>Pattern:</strong> "' + escapeHtml(pattern.prefix) + 'N' + escapeHtml(pattern.suffix) + '" <strong>Next:</strong> ' + escapeHtml(pattern.prefix + pattern.nextNumber + pattern.suffix);
-
-  document.getElementById('batch-name-prefix').value = pattern.prefix + pattern.nextNumber + pattern.suffix;
-
-  try {
-    await supabase.from('batch_configs').update({
-      batch_pattern_prefix: pattern.prefix,
-      batch_pattern_suffix: pattern.suffix,
-      batch_pattern_next_number: pattern.nextNumber
-    }).eq('user_id', user.id);
-  } catch (e) { console.warn('Could not save batch pattern:', e); }
-});
-
 document.getElementById('cancel-settings').addEventListener('click', () => {
   hideModal('settings-modal');
 });
@@ -799,10 +719,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     lock_up_before_farrowing: parseInt(document.getElementById('set-lockup').value),
     vaccinate_after_farrowing: parseInt(document.getElementById('set-vaccinate').value),
     weaning_after_farrowing: parseInt(document.getElementById('set-weaning').value),
-    batch_spacing_days: parseInt(document.getElementById('set-spacing').value),
-    batch_pattern_prefix: currentConfig.batch_pattern_prefix || '',
-    batch_pattern_suffix: currentConfig.batch_pattern_suffix || '',
-    batch_pattern_next_number: currentConfig.batch_pattern_next_number || 0
+    batch_spacing_days: parseInt(document.getElementById('set-spacing').value)
   };
   btn.disabled = true;
   btn.textContent = 'Saving...';
@@ -828,23 +745,6 @@ document.getElementById('add-batch-btn').addEventListener('click', () => {
   const today = new Date();
   document.getElementById('batch-breed-date').value = fmtDate(today);
   document.getElementById('batch-name-prefix').value = 'Batch';
-  document.getElementById('batch-example-1').value = '';
-  document.getElementById('batch-example-2').value = '';
-  document.getElementById('batch-example-3').value = '';
-  document.getElementById('batch-pattern-status').textContent = '';
-  document.getElementById('batch-pattern-status').className = 'batch-pattern-status';
-  document.getElementById('batch-pattern-result').style.display = 'none';
-  const nextNum = currentConfig.batch_pattern_next_number || 0;
-  const prefix = currentConfig.batch_pattern_prefix || '';
-  const suffix = currentConfig.batch_pattern_suffix || '';
-  if (nextNum > 0) {
-    document.getElementById('batch-name-prefix').value = prefix + nextNum + suffix;
-    document.getElementById('batch-example-1').value = prefix + (nextNum - 3) + suffix;
-    document.getElementById('batch-example-2').value = prefix + (nextNum - 2) + suffix;
-    document.getElementById('batch-example-3').value = prefix + (nextNum - 1) + suffix;
-    document.getElementById('batch-pattern-result').style.display = 'block';
-    document.getElementById('batch-pattern-result').innerHTML = '<strong>Pattern:</strong> "' + escapeHtml(prefix) + 'N' + escapeHtml(suffix) + '" <strong>Next:</strong> ' + escapeHtml(prefix + nextNum + suffix);
-  }
   document.getElementById('batch-count').value = 1;
   document.getElementById('batch-message').className = 'auth-message';
   document.getElementById('batch-message').textContent = '';
@@ -972,33 +872,12 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
     return;
   }
 
-  // Extract starting number using learned pattern or fallback parsing
+  // Extract starting number: if the name ends with digits, split them off
   let startBatchNumber = 1;
-  const patPrefix = currentConfig.batch_pattern_prefix || '';
-  const patSuffix = currentConfig.batch_pattern_suffix || '';
-  const lcPrefix = patPrefix.toLowerCase();
-  const lcSuffix = patSuffix.toLowerCase();
-  const lcName = namePrefix.toLowerCase();
-  if (patPrefix && lcName.startsWith(lcPrefix)) {
-    const rest = namePrefix.slice(patPrefix.length);
-    const num = parseInt(rest);
-    if (!isNaN(num)) {
-      namePrefix = patPrefix;
-      startBatchNumber = num;
-    }
-  } else if (patSuffix && lcName.endsWith(lcSuffix) && patPrefix === '') {
-    const rest = namePrefix.slice(0, -patSuffix.length);
-    const num = parseInt(rest);
-    if (!isNaN(num)) {
-      namePrefix = patSuffix;
-      startBatchNumber = num;
-    }
-  } else {
-    const numberMatch = namePrefix.match(/^(.+?)\s+(\d+)$/);
-    if (numberMatch) {
-      namePrefix = numberMatch[1];
-      startBatchNumber = parseInt(numberMatch[2]);
-    }
+  const numberMatch = namePrefix.match(/^(.+?)(\d+)$/);
+  if (numberMatch) {
+    namePrefix = numberMatch[1];
+    startBatchNumber = parseInt(numberMatch[2]);
   }
   if (!breedDate) {
     msg.className = 'auth-message error';
@@ -1069,16 +948,6 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
 
     const events = calcBatchEvents(currentConfig, breedDate, namePrefix, batchCount, startBatchNumber);
     await saveBatchEvents(events);
-
-    // Update next batch number in config
-    if (currentConfig.batch_pattern_prefix || currentConfig.batch_pattern_suffix) {
-      currentConfig.batch_pattern_next_number = startBatchNumber + batchCount;
-      try {
-        await supabase.from('batch_configs').update({
-          batch_pattern_next_number: currentConfig.batch_pattern_next_number
-        }).eq('user_id', user.id);
-      } catch (e) { console.warn('Could not update batch next number:', e); }
-    }
 
     msg.className = 'auth-message success';
     msg.textContent = batchCount + ' batch(es) generated! (' + events.length + ' events)';
