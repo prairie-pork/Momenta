@@ -776,33 +776,35 @@ button:hover {
 /* =============================================
    BATCH NAMING PATTERN
    ============================================= */
-.settings-divider {
-  border: none;
-  border-top: 1px solid #eadfce;
-  margin: 18px 0;
+.pattern-trainer {
+  margin-top: 8px;
 }
 
-#settings-form h3 {
-  margin: 0 0 6px;
-  font-size: 1em;
-  color: #4a3020;
+.pattern-trainer-inputs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
-.batch-pattern-inputs {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin: 8px 0;
-}
-
-.batch-pattern-inputs input {
-  margin: 0;
+.pattern-input {
+  flex: 1;
+  min-width: 0;
   text-align: center;
+  font-size: 0.85em !important;
+  padding: 6px 8px !important;
+  margin: 0 !important;
+}
+
+.pattern-learn-btn {
+  flex-shrink: 0;
+  font-size: 0.85em !important;
+  padding: 6px 14px !important;
+  white-space: nowrap;
 }
 
 .batch-pattern-status {
-  font-size: 0.85em;
-  margin: 6px 0;
+  font-size: 0.82em;
+  margin: 4px 0 0;
 }
 .batch-pattern-status.error {
   color: #c0392b;
@@ -812,12 +814,12 @@ button:hover {
 }
 
 .batch-pattern-result {
-  font-size: 0.9em;
-  padding: 10px 12px;
+  font-size: 0.85em;
+  padding: 6px 10px;
   background: #f0f7e6;
   border: 1px solid #c8dba0;
   border-radius: 6px;
-  margin: 8px 0;
+  margin: 6px 0 0;
 }
 
 @media screen and (max-width: 560px) {
@@ -840,6 +842,17 @@ button:hover {
   .color-swatch-row {
     margin-top: 14px;
     grid-template-columns: repeat(6, 24px);
+  }
+
+  .pattern-trainer-inputs {
+    flex-wrap: wrap;
+  }
+  .pattern-input {
+    flex: 1 1 70px;
+    min-width: 60px;
+  }
+  .pattern-learn-btn {
+    flex: 1 1 100%;
   }
 }
 

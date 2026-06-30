@@ -739,26 +739,10 @@ document.getElementById('settings-btn').addEventListener('click', () => {
   document.getElementById('set-spacing').value = currentConfig.batch_spacing_days;
   document.getElementById('settings-message').className = 'auth-message';
   document.getElementById('settings-message').textContent = '';
-  const prefix = currentConfig.batch_pattern_prefix || '';
-  const suffix = currentConfig.batch_pattern_suffix || '';
-  const nextNum = currentConfig.batch_pattern_next_number || 0;
-  if (nextNum > 0) {
-    document.getElementById('batch-example-1').value = prefix + (nextNum - 3) + suffix;
-    document.getElementById('batch-example-2').value = prefix + (nextNum - 2) + suffix;
-    document.getElementById('batch-example-3').value = prefix + (nextNum - 1) + suffix;
-    document.getElementById('batch-pattern-result').textContent = 'Pattern: "' + prefix + 'N' + suffix + '"  Next: ' + prefix + nextNum + suffix;
-    document.getElementById('batch-pattern-result').style.display = 'block';
-  } else {
-    document.getElementById('batch-example-1').value = '';
-    document.getElementById('batch-example-2').value = '';
-    document.getElementById('batch-example-3').value = '';
-    document.getElementById('batch-pattern-result').style.display = 'none';
-  }
-  document.getElementById('batch-pattern-status').textContent = '';
   showModal('settings-modal');
 });
 
-document.getElementById('learn-batch-pattern-btn').addEventListener('click', () => {
+document.getElementById('learn-batch-pattern-btn').addEventListener('click', async () => {
   const s1 = document.getElementById('batch-example-1').value.trim();
   const s2 = document.getElementById('batch-example-2').value.trim();
   const s3 = document.getElementById('batch-example-3').value.trim();
@@ -767,7 +751,7 @@ document.getElementById('learn-batch-pattern-btn').addEventListener('click', () 
 
   if (!s1 || !s2 || !s3) {
     status.className = 'batch-pattern-status error';
-    status.textContent = 'Please enter all 3 batch names.';
+    status.textContent = 'Enter all 3 names.';
     result.style.display = 'none';
     return;
   }
@@ -775,7 +759,7 @@ document.getElementById('learn-batch-pattern-btn').addEventListener('click', () 
   const pattern = learnBatchPattern([s1, s2, s3]);
   if (!pattern) {
     status.className = 'batch-pattern-status error';
-    status.textContent = 'Could not detect a pattern. Make sure batch numbers increment by 1 (e.g. B26-1, B26-2, B26-3).';
+    status.textContent = 'Names must increment by 1 (e.g. B26-1, B26-2, B26-3).';
     result.style.display = 'none';
     return;
   }
@@ -785,9 +769,19 @@ document.getElementById('learn-batch-pattern-btn').addEventListener('click', () 
   currentConfig.batch_pattern_next_number = pattern.nextNumber;
 
   status.className = 'batch-pattern-status success';
-  status.textContent = 'Pattern learned! Save settings to apply.';
+  status.textContent = 'Pattern saved.';
   result.style.display = 'block';
-  result.innerHTML = '<strong>Pattern:</strong> "' + escapeHtml(pattern.prefix) + 'N' + escapeHtml(pattern.suffix) + '"<br><strong>Next batch:</strong> ' + escapeHtml(pattern.prefix + pattern.nextNumber + pattern.suffix);
+  result.innerHTML = '<strong>Pattern:</strong> "' + escapeHtml(pattern.prefix) + 'N' + escapeHtml(pattern.suffix) + '" <strong>Next:</strong> ' + escapeHtml(pattern.prefix + pattern.nextNumber + pattern.suffix);
+
+  document.getElementById('batch-name-prefix').value = pattern.prefix + pattern.nextNumber + pattern.suffix;
+
+  try {
+    await supabase.from('batch_configs').update({
+      batch_pattern_prefix: pattern.prefix,
+      batch_pattern_suffix: pattern.suffix,
+      batch_pattern_next_number: pattern.nextNumber
+    }).eq('user_id', user.id);
+  } catch (e) { console.warn('Could not save batch pattern:', e); }
 });
 
 document.getElementById('cancel-settings').addEventListener('click', () => {
@@ -832,15 +826,23 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
 document.getElementById('add-batch-btn').addEventListener('click', () => {
   const today = new Date();
   document.getElementById('batch-breed-date').value = fmtDate(today);
+  document.getElementById('batch-name-prefix').value = 'Batch';
+  document.getElementById('batch-example-1').value = '';
+  document.getElementById('batch-example-2').value = '';
+  document.getElementById('batch-example-3').value = '';
+  document.getElementById('batch-pattern-status').textContent = '';
+  document.getElementById('batch-pattern-status').className = 'batch-pattern-status';
+  document.getElementById('batch-pattern-result').style.display = 'none';
   const nextNum = currentConfig.batch_pattern_next_number || 0;
   const prefix = currentConfig.batch_pattern_prefix || '';
   const suffix = currentConfig.batch_pattern_suffix || '';
-  if (nextNum > 0 && prefix) {
+  if (nextNum > 0) {
     document.getElementById('batch-name-prefix').value = prefix + nextNum + suffix;
-  } else if (nextNum > 0 && suffix) {
-    document.getElementById('batch-name-prefix').value = prefix + nextNum + suffix;
-  } else {
-    document.getElementById('batch-name-prefix').value = 'Batch';
+    document.getElementById('batch-example-1').value = prefix + (nextNum - 3) + suffix;
+    document.getElementById('batch-example-2').value = prefix + (nextNum - 2) + suffix;
+    document.getElementById('batch-example-3').value = prefix + (nextNum - 1) + suffix;
+    document.getElementById('batch-pattern-result').style.display = 'block';
+    document.getElementById('batch-pattern-result').innerHTML = '<strong>Pattern:</strong> "' + escapeHtml(prefix) + 'N' + escapeHtml(suffix) + '" <strong>Next:</strong> ' + escapeHtml(prefix + nextNum + suffix);
   }
   document.getElementById('batch-count').value = 1;
   document.getElementById('batch-message').className = 'auth-message';
