@@ -447,15 +447,16 @@ function batchDisplayName(batchName, batchNumber) {
 
 function learnBatchPattern(names) {
   const [s1, s2, s3] = names;
+  const lc1 = s1.toLowerCase(), lc2 = s2.toLowerCase(), lc3 = s3.toLowerCase();
   let prefix = '';
   for (let i = 0; i < s1.length; i++) {
-    if (s2[i] === s1[i] && s3[i] === s1[i]) prefix += s1[i];
+    if (lc2[i] === lc1[i] && lc3[i] === lc1[i]) prefix += s1[i];
     else break;
   }
   let suffix = '';
   for (let i = 0; i < s1.length; i++) {
     const ci = s1.length - 1 - i;
-    if (s2[s2.length - 1 - i] === s1[ci] && s3[s3.length - 1 - i] === s1[ci])
+    if (lc2[lc2.length - 1 - i] === lc1[ci] && lc3[lc3.length - 1 - i] === lc1[ci])
       suffix = s1[ci] + suffix;
     else break;
   }
@@ -975,14 +976,17 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
   let startBatchNumber = 1;
   const patPrefix = currentConfig.batch_pattern_prefix || '';
   const patSuffix = currentConfig.batch_pattern_suffix || '';
-  if (patPrefix && namePrefix.startsWith(patPrefix)) {
+  const lcPrefix = patPrefix.toLowerCase();
+  const lcSuffix = patSuffix.toLowerCase();
+  const lcName = namePrefix.toLowerCase();
+  if (patPrefix && lcName.startsWith(lcPrefix)) {
     const rest = namePrefix.slice(patPrefix.length);
     const num = parseInt(rest);
     if (!isNaN(num)) {
       namePrefix = patPrefix;
       startBatchNumber = num;
     }
-  } else if (patSuffix && namePrefix.endsWith(patSuffix) && patPrefix === '') {
+  } else if (patSuffix && lcName.endsWith(lcSuffix) && patPrefix === '') {
     const rest = namePrefix.slice(0, -patSuffix.length);
     const num = parseInt(rest);
     if (!isNaN(num)) {
