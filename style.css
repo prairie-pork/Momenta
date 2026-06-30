@@ -775,7 +775,15 @@ button:hover {
 
 @media screen and (max-width: 560px) {
   .custom-type-form {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr auto;
+  }
+
+  #custom-type-name {
+    grid-column: 1 / -1;
+  }
+
+  .custom-days-field input {
+    text-align: center;
   }
 
   .color-swatch-row {
@@ -987,6 +995,9 @@ button:hover {
     overflow: visible !important;
     margin: 0 !important;
     border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
   }
   .year-view-header button,
   .year-view-actions button {
@@ -1006,9 +1017,14 @@ button:hover {
     overflow: visible !important;
     padding: 0 !important;
     background: white !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
   .year-mini-calendars {
+    flex: 1 !important;
     grid-template-columns: repeat(4, 1fr) !important;
+    grid-auto-rows: 1fr !important;
     gap: 12px !important;
     padding: 0 !important;
     background: white !important;
@@ -1529,6 +1545,10 @@ button:hover {
   .create-btn-corner {
     top: 20px;
     right: 18px;
+  }
+
+  .custom-events-modal .modal-note {
+    padding-right: 60px;
   }
 
   /* Auth pages (login/signup): inset from screen edges */
