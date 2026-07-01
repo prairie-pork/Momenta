@@ -126,9 +126,10 @@ function subscribeToCalendarChanges() {
       }
     )
     .on('postgres_changes',
-      { event: '*', schema: 'public', table: 'custom_event_types', filter: 'created_by=eq.' + user.id },
-      async () => {
-        await loadCustomEventTypes();
+      { event: '*', schema: 'public', table: 'custom_event_types' },
+      async (payload) => {
+        console.log('[Momenta] Realtime: custom_event_types changed', payload.eventType, payload.new?.id, payload.old?.id);
+        await loadCalendarCustomEventTypes();
         await updateCalendar();
       }
     )
@@ -166,6 +167,7 @@ async function renderCalendarSwitcher() {
 
   const iconPrivate = '<span class="cal-btn-icon" title="Private farm"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5 8 2.5l6 5V14H2V7.5z"/><path d="M6 14V9h4v5"/></svg></span>';
   const iconShared = '<span class="cal-btn-icon" title="Shared farm"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="5" r="2.25"/><circle cx="10.5" cy="5" r="2.25"/><path d="M1 13.5c0-2.5 2-3.75 4.5-3.75S9.5 11 9.5 13.5"/><path d="M6.5 13.5c0-2 1.75-3.25 4-3.25s4 1.25 4 3.25"/></svg></span>';
+
 
   let html = '';
   for (const cal of calendars) {
@@ -248,10 +250,14 @@ const EVENT_STYLES = {
 const CUSTOM_EVENT_COLORS = [
   '#0f766e', '#0891b2', '#ea580c', '#db2777',
   '#475569', '#7c2d12', '#14b8a6', '#f97316',
-  '#be123c', '#334155', '#0369a1', '#a16207'
+  '#be123c', '#334155', '#0369a1', '#a16207',
+  '#84cc16', '#06b6d4', '#eab308', '#d946ef',
+  '#22c55e', '#3b82f6', '#f43f5e', '#2dd4bf',
+  '#a78bfa', '#fb923c', '#34d399', '#60a5fa'
 ];
 let customEventTypes = [];
 let selectedCustomColor = CUSTOM_EVENT_COLORS[0];
+const LOCK_ICON = '<span class="private-event-icon"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span>';
 
 function eventStyle(type) {
   if (EVENT_STYLES[type]) return EVENT_STYLES[type];
@@ -259,6 +265,7 @@ function eventStyle(type) {
     const id = type.slice(7);
     const custom = customEventTypes.find(t => t.id === id);
     if (custom) return { label: custom.name, badge: custom.color, bg: hexToRgba(custom.color, 0.18) };
+    console.warn('[Momenta] eventStyle: custom type not found in loaded types. id=' + id + ', type=' + type + ', loadedTypes=' + customEventTypes.length, customEventTypes.map(t => t.id));
   }
   return { label: 'Event', badge: '#64748b', bg: 'rgba(100, 116, 139, 0.16)' };
 }
@@ -373,11 +380,12 @@ async function loadCustomEventTypes() {
     .order('name', { ascending: true });
   if (error) { console.error('Error loading custom event types:', error); customEventTypes = []; return []; }
   customEventTypes = data || [];
+  console.log('[Momenta] loadCustomEventTypes: loaded ' + customEventTypes.length + ' types for user ' + user.id, customEventTypes.map(t => ({ id: t.id, name: t.name })));
   return customEventTypes;
 }
 
 async function loadCalendarCustomEventTypes() {
-  // Load user's own types plus any used by events in the current calendar (shared farm support)
+  console.log('[Momenta] loadCalendarCustomEventTypes: calendar=' + currentCalendarId);
   await loadCustomEventTypes();
   if (!currentCalendarId) return customEventTypes;
 
@@ -386,18 +394,29 @@ async function loadCalendarCustomEventTypes() {
     .select('event_type')
     .eq('calendar_id', currentCalendarId)
     .filter('event_type', 'like', 'custom:%');
-  if (!eventTypes || eventTypes.length === 0) return customEventTypes;
+  if (!eventTypes || eventTypes.length === 0) {
+    console.log('[Momenta] loadCalendarCustomEventTypes: no custom events in this calendar');
+    return customEventTypes;
+  }
 
   const ids = [...new Set(eventTypes.map(e => e.event_type.slice(7)))];
   const ownIds = new Set(customEventTypes.map(t => t.id));
   const missingIds = ids.filter(id => !ownIds.has(id));
+  console.log('[Momenta] loadCalendarCustomEventTypes: found ' + ids.length + ' custom type(s) in calendar, ' + missingIds.length + ' missing (not owned by current user)');
   if (missingIds.length === 0) return customEventTypes;
 
-  const { data: sharedTypes } = await supabase
+  console.log('[Momenta] loadCalendarCustomEventTypes: fetching shared types', missingIds);
+  const { data: sharedTypes, error: sharedErr } = await supabase
     .from('custom_event_types')
     .select('*')
     .in('id', missingIds);
-  if (sharedTypes) customEventTypes.push(...sharedTypes);
+  if (sharedErr) console.error('[Momenta] loadCalendarCustomEventTypes: error fetching shared types', sharedErr);
+  if (sharedTypes) {
+    console.log('[Momenta] loadCalendarCustomEventTypes: loaded ' + sharedTypes.length + ' shared types', sharedTypes.map(t => ({ id: t.id, name: t.name, created_by: t.created_by })));
+    customEventTypes.push(...sharedTypes);
+  } else {
+    console.warn('[Momenta] loadCalendarCustomEventTypes: shared types query returned 0 results — likely an RLS block. missingIds:', missingIds);
+  }
   return customEventTypes;
 }
 
@@ -613,7 +632,11 @@ async function updateCalendar() {
           badge.appendChild(typeSpan);
           badge.appendChild(batchSpan);
         } else if (isCustom) {
-          badge.textContent = style.label;
+          if (evt.is_private) {
+            badge.innerHTML = LOCK_ICON + style.label;
+          } else {
+            badge.textContent = style.label;
+          }
         } else {
           badge.textContent = style.label;
         }
@@ -872,9 +895,14 @@ async function populateCustomEventTypeSelect() {
 document.getElementById('add-custom-event-btn').addEventListener('click', async () => {
   const today = new Date();
   document.getElementById('custom-event-date').value = fmtDate(today);
+  const privateCheckbox = document.getElementById('custom-event-private');
+  privateCheckbox.checked = false;
+  privateCheckbox.disabled = false;
   document.getElementById('custom-event-message').className = 'auth-message';
   document.getElementById('custom-event-message').textContent = '';
   await populateCustomEventTypeSelect();
+  // Sync checkbox state for the initially selected type
+  document.getElementById('custom-event-type').dispatchEvent(new Event('change'));
   showModal('custom-event-modal');
 });
 
@@ -897,12 +925,26 @@ document.getElementById('cancel-custom-event').addEventListener('click', () => {
   hideModal('custom-event-modal');
 });
 
+document.getElementById('custom-event-type').addEventListener('change', function () {
+  const typeId = this.value;
+  const type = customEventTypes.find(t => t.id === typeId);
+  const privateCheckbox = document.getElementById('custom-event-private');
+  if (type && type.is_private) {
+    privateCheckbox.checked = true;
+    privateCheckbox.disabled = true;
+  } else {
+    privateCheckbox.checked = false;
+    privateCheckbox.disabled = false;
+  }
+});
+
 document.getElementById('custom-event-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('custom-event-message');
   const btn = document.getElementById('save-custom-event-btn');
   const typeId = document.getElementById('custom-event-type').value;
   const date = document.getElementById('custom-event-date').value;
+  const isPrivate = document.getElementById('custom-event-private').checked;
 
   if (!typeId || !date) {
     msg.className = 'auth-message error';
@@ -926,7 +968,8 @@ document.getElementById('custom-event-form').addEventListener('submit', async (e
       event_type: 'custom:' + typeId,
       start_date: date,
       end_date: days > 1 ? fmtDate(end) : null,
-      calendar_id: currentCalendarId
+      calendar_id: currentCalendarId,
+      is_private: isPrivate
     });
     if (error) throw error;
     msg.className = 'auth-message success';
@@ -990,7 +1033,7 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
       console.warn('Could not load batch config, using current settings:', configErr);
     }
 
-    // Check for duplicate breed ranges (not just start dates)
+    // Load existing breed events for all conflict checks
     const { data: existingBreeds } = await supabase
       .from('events')
       .select('start_date, end_date, batch_name, batch_number')
@@ -1000,26 +1043,50 @@ document.getElementById('add-batch-form').addEventListener('submit', async (e) =
     const start = new Date(breedDate + 'T00:00:00');
     let conflictMsg = '';
 
+    // 1. Duplicate batch name check
+    for (let b = 0; b < batchCount && !conflictMsg; b++) {
+      const bn = startBatchNumber + b;
+      const dup = (existingBreeds || []).find(e =>
+        e.batch_name === namePrefix && e.batch_number === bn
+      );
+      if (dup) {
+        conflictMsg = batchDisplayName(namePrefix, bn) + ' already exists. Use a different name or starting number.';
+      }
+    }
+
+    // 2. Spacing and overlap check
     for (let b = 0; b < batchCount && !conflictMsg; b++) {
       const bs = new Date(start);
       bs.setDate(bs.getDate() + b * currentConfig.batch_spacing_days);
       const be = new Date(bs);
       be.setDate(be.getDate() + (currentConfig.breed_range - 1));
 
-      // Check every day in this batch's breed range
-      let cur = new Date(bs);
-      while (cur <= be) {
-        const dateStr = fmtDate(cur);
-        for (const ex of (existingBreeds || [])) {
-          const exStart = ex.start_date;
-          const exEnd = ex.end_date || ex.start_date;
-          if (dateStr >= exStart && dateStr <= exEnd) {
-            conflictMsg = 'Date ' + dateStr + ' conflicts with ' + batchDisplayName(ex.batch_name, ex.batch_number);
-            break;
-          }
+      // Check spacing from existing batch breed start dates
+      for (const ex of (existingBreeds || [])) {
+        const exStart = new Date(ex.start_date + 'T00:00:00');
+        const diffDays = Math.abs(Math.round((bs - exStart) / (1000 * 60 * 60 * 24)));
+        if (diffDays > 0 && diffDays < currentConfig.batch_spacing_days) {
+          conflictMsg = batchDisplayName(namePrefix, startBatchNumber + b) + ' breed start (' + fmtDate(bs) + ') is only ' + diffDays + ' day(s) from ' + batchDisplayName(ex.batch_name, ex.batch_number) + ' (' + ex.start_date + '). Minimum spacing is ' + currentConfig.batch_spacing_days + ' days.';
+          break;
         }
-        if (conflictMsg) break;
-        cur.setDate(cur.getDate() + 1);
+      }
+
+      // Check every day in this batch's breed range for date overlap
+      if (!conflictMsg) {
+        let cur = new Date(bs);
+        while (cur <= be) {
+          const dateStr = fmtDate(cur);
+          for (const ex of (existingBreeds || [])) {
+            const exStart = ex.start_date;
+            const exEnd = ex.end_date || ex.start_date;
+            if (dateStr >= exStart && dateStr <= exEnd) {
+              conflictMsg = 'Date ' + dateStr + ' conflicts with ' + batchDisplayName(ex.batch_name, ex.batch_number);
+              break;
+            }
+          }
+          if (conflictMsg) break;
+          cur.setDate(cur.getDate() + 1);
+        }
       }
     }
 
@@ -1108,9 +1175,11 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
       const dateRange = evt.end_date && evt.end_date !== evt.start_date
         ? evt.start_date + ' - ' + evt.end_date
         : evt.start_date;
+      const isPrivate = evt.is_private && g.isCustom;
+      const lockHtml = isPrivate ? LOCK_ICON : '';
       html += '<div class="event-row">';
       html += '<span class="event-type-dot" style="background:' + style.badge + '"></span>';
-      html += '<span class="event-type-label" style="color:' + style.badge + '">' + style.label + '</span>';
+      html += '<span class="event-type-label" style="color:' + style.badge + '">' + lockHtml + style.label + '</span>';
       html += '<span class="event-date" style="font-size:1.15em;font-weight:bold;">' + escapeHtml(dateRange) + '</span>';
       const rescheduleLabel = g.isCustom ? g.batchName : batchDisplayName(g.batchName, g.batchNumber);
       html += '<button data-action="reschedule" data-id="' + escapeAttr(evt.id) + '" data-type="' + escapeAttr(evt.event_type) + '" data-start="' + escapeAttr(evt.start_date) + '" data-end="' + escapeAttr(evt.end_date || '') + '" data-batch="' + escapeAttr(rescheduleLabel) + '" data-batch-name="' + batchNameAttr + '" data-batch-number="' + batchNumberAttr + '">Reschedule</button>';
@@ -1499,9 +1568,10 @@ function renderCustomEventTypes() {
   }
   container.innerHTML = customEventTypes.map(t => {
     const days = Number(t.duration_days || 1);
+    const lockIcon = t.is_private ? LOCK_ICON : '';
     return '<div class="custom-type-row">'
       + '<span class="custom-type-dot" style="background:' + escapeAttr(t.color) + '"></span>'
-      + '<span class="custom-type-name">' + escapeHtml(t.name) + '</span>'
+      + '<span class="custom-type-name">' + lockIcon + escapeHtml(t.name) + '</span>'
       + '<span class="custom-type-days">' + days + ' day' + (days === 1 ? '' : 's') + '</span>'
       + '<button type="button" data-action="rename-custom-type" data-id="' + escapeAttr(t.id) + '">Rename</button>'
       + '<button type="button" class="delete-btn" data-action="delete-custom-type" data-id="' + escapeAttr(t.id) + '">Delete</button>'
@@ -1541,6 +1611,7 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
   const input = document.getElementById('custom-type-name');
   const name = input.value.trim();
   const duration = parseInt(document.getElementById('custom-type-duration').value);
+  const isPrivate = document.getElementById('custom-type-private').checked;
   if (!name) {
     msg.className = 'auth-message error';
     msg.textContent = 'Enter a name.';
@@ -1556,7 +1627,8 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
     name,
     color: selectedCustomColor,
     duration_days: duration,
-    created_by: user.id
+    created_by: user.id,
+    is_private: isPrivate
   });
   if (error) {
     msg.className = 'auth-message error';
@@ -1565,6 +1637,7 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
   }
   input.value = '';
   document.getElementById('custom-type-duration').value = 1;
+  document.getElementById('custom-type-private').checked = false;
   msg.className = 'auth-message success';
   msg.textContent = 'Custom event created.';
   await loadCustomEventTypes();

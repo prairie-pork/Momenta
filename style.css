@@ -386,8 +386,7 @@ button:hover {
 }
 
 .form-group input,
-.form-group select,
-.custom-type-form input {
+.form-group select {
   width: 100%;
   padding: 10px 12px;
   font-size: 1em;
@@ -400,8 +399,7 @@ button:hover {
 }
 
 .form-group input:focus,
-.form-group select:focus,
-.custom-type-form input:focus {
+.form-group select:focus {
   outline: none;
   border-color: #190800;
   box-shadow: 0 0 0 3px rgba(25, 8, 0, 0.08);
@@ -695,49 +693,77 @@ button:hover {
 }
 
 .custom-type-form {
-  display: grid;
-  grid-template-columns: minmax(150px, 1fr) 112px auto auto;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 24px;
 }
-
-.custom-type-form input {
-  margin: 0;
+.custom-type-form input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1em;
+  border: 1px solid #c7b299;
+  border-radius: 6px;
+  background-color: #fffdf8;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  color: #190800;
+  margin-bottom: 14px;
 }
-
-.custom-days-field {
+.custom-type-form input[type="text"]:focus {
+  outline: none;
+  border-color: #190800;
+  box-shadow: 0 0 0 3px rgba(25, 8, 0, 0.08);
+}
+.custom-type-form .privacy-label {
+  margin-bottom: 14px;
+}
+.custom-type-form .custom-days-field-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #6c5b4a;
-  font-size: 0.82em;
-  font-weight: 700;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #190800;
+  font-size: 0.92em;
+}
+.custom-type-form .custom-days-field-row span {
+  white-space: nowrap;
+}
+.custom-type-form .custom-days-field-row input {
+  width: 70px;
+  padding: 8px 10px;
+  font-size: 1em;
+  border: 1px solid #c7b299;
+  border-radius: 6px;
+  background: #fffdf8;
+  text-align: center;
 }
 
-.custom-days-field input {
-  flex: 0 0 58px;
-  width: 58px;
-  min-width: 0;
-}
-
+/* Color swatches */
 .color-swatch-row {
   display: grid;
-  grid-template-columns: repeat(6, 24px);
-  gap: 6px;
+  grid-template-columns: repeat(6, 28px);
+  gap: 7px;
+  margin-bottom: 4px;
 }
 
 .color-swatch {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border-radius: 50%;
   border: 2px solid #fff8f0;
   box-shadow: 0 0 0 1px #c7b299;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+.color-swatch:active {
+  transform: scale(0.95);
 }
 
 .color-swatch.selected {
   box-shadow: 0 0 0 2px #190800;
+  transform: scale(1.1);
 }
 
 .custom-type-row {
@@ -822,24 +848,24 @@ button:hover {
 
 @media screen and (max-width: 560px) {
   .custom-type-form {
-    grid-template-columns: 1fr auto;
+    margin-bottom: 18px;
   }
 
-  #custom-type-name {
-    grid-column: 1 / -1;
+  .custom-type-form input[type="text"] {
+    font-size: 16px;
   }
 
-  .custom-days-field {
-    margin-top: 14px;
-  }
-
-  .custom-days-field input {
+  .custom-type-form .custom-days-field-row input {
     text-align: center;
   }
 
   .color-swatch-row {
-    margin-top: 14px;
-    grid-template-columns: repeat(6, 24px);
+    margin-top: 10px;
+    grid-template-columns: repeat(6, 30px);
+  }
+  .color-swatch {
+    width: 30px;
+    height: 30px;
   }
 }
 
@@ -1603,7 +1629,7 @@ button:hover {
     width: 100% !important;
   }
 
-  /* Custom Events Settings: reposition Create button to not overlap heading */
+  /* Custom Events Settings: reposition Close button to not overlap heading */
   .create-btn-corner {
     top: 20px;
     right: 18px;
@@ -1679,6 +1705,87 @@ button:hover {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+}
+
+/* Privacy toggle for custom events */
+.privacy-toggle {
+  margin-bottom: 16px;
+}
+.privacy-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: normal !important;
+  color: #190800;
+  font-size: 0.92em;
+  user-select: none;
+}
+.privacy-label input[type="checkbox"] {
+  display: none;
+}
+.privacy-checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #c7b299;
+  border-radius: 4px;
+  background: #fffdf8;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.privacy-label input:checked + .privacy-checkmark {
+  background: #190800;
+  border-color: #190800;
+}
+.privacy-label input:checked + .privacy-checkmark::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.privacy-icon {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.5;
+  margin-left: auto;
+}
+.privacy-label input:checked ~ .privacy-icon {
+  opacity: 1;
+  color: #190800;
+}
+
+/* Lock icon badge on private events */
+.private-event-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 3px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.private-event-icon svg {
+  display: block;
+}
+
+/* Disabled privacy checkbox */
+.privacy-label input:disabled + .privacy-checkmark {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #d4c4b0;
+}
+.privacy-label input:disabled:checked + .privacy-checkmark {
+  background: #888;
+  border-color: #888;
+}
+.privacy-label input:disabled ~ .privacy-text,
+.privacy-label input:disabled ~ .privacy-icon {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Notes:

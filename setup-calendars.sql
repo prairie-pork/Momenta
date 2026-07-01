@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS events (
   event_type TEXT NOT NULL,
   start_date DATE NOT NULL,
   end_date DATE,
+  is_private BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
   calendar_id UUID REFERENCES calendars(id) ON DELETE CASCADE
 );
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS custom_event_types (
   name TEXT NOT NULL,
   color TEXT NOT NULL,
   duration_days INT NOT NULL DEFAULT 1 CHECK (duration_days BETWEEN 1 AND 30),
+  is_private BOOLEAN NOT NULL DEFAULT false,
   created_by UUID REFERENCES auth.users(id) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -268,12 +270,14 @@ GRANT EXECUTE ON FUNCTION redeem_invite(TEXT) TO authenticated;
 
 -- 4. Add calendar_id to existing tables
 ALTER TABLE events ADD COLUMN IF NOT EXISTS calendar_id UUID REFERENCES calendars(id) ON DELETE CASCADE;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS is_private BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS calendar_id UUID REFERENCES calendars(id) ON DELETE CASCADE;
 
 -- Custom event types are account-level now. They can be used on any farm and
 -- should survive when a farm is deleted.
 ALTER TABLE custom_event_types ALTER COLUMN calendar_id DROP NOT NULL;
 ALTER TABLE custom_event_types ADD COLUMN IF NOT EXISTS duration_days INT NOT NULL DEFAULT 1;
+ALTER TABLE custom_event_types ADD COLUMN IF NOT EXISTS is_private BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE custom_event_types DROP CONSTRAINT IF EXISTS custom_event_types_duration_days_check;
 ALTER TABLE custom_event_types ADD CONSTRAINT custom_event_types_duration_days_check CHECK (duration_days BETWEEN 1 AND 30);
 DO $$
@@ -320,7 +324,14 @@ AS $$
 $$;
 
 CREATE POLICY "custom_event_types_select" ON custom_event_types FOR SELECT
-  USING (created_by = auth.uid());
+  USING (
+    created_by = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM events e
+      WHERE e.event_type = 'custom:' || custom_event_types.id::text
+      AND can_access_calendar(e.calendar_id, auth.uid())
+    )
+  );
 
 CREATE POLICY "custom_event_types_insert" ON custom_event_types FOR INSERT
   WITH CHECK (
@@ -349,7 +360,10 @@ DROP POLICY IF EXISTS "events_update" ON events;
 DROP POLICY IF EXISTS "events_delete" ON events;
 
 CREATE POLICY "events_select" ON events FOR SELECT
-  USING (can_access_calendar(calendar_id, auth.uid()));
+  USING (
+    can_access_calendar(calendar_id, auth.uid())
+    AND (is_private IS NOT TRUE OR user_id = auth.uid())
+  );
 
 CREATE POLICY "events_insert" ON events FOR INSERT
   WITH CHECK (
@@ -358,11 +372,20 @@ CREATE POLICY "events_insert" ON events FOR INSERT
   );
 
 CREATE POLICY "events_update" ON events FOR UPDATE
-  USING (can_access_calendar(calendar_id, auth.uid()))
-  WITH CHECK (can_access_calendar(calendar_id, auth.uid()));
+  USING (
+    can_access_calendar(calendar_id, auth.uid())
+    AND (is_private IS NOT TRUE OR user_id = auth.uid())
+  )
+  WITH CHECK (
+    can_access_calendar(calendar_id, auth.uid())
+    AND (is_private IS NOT TRUE OR user_id = auth.uid())
+  );
 
 CREATE POLICY "events_delete" ON events FOR DELETE
-  USING (can_access_calendar(calendar_id, auth.uid()));
+  USING (
+    can_access_calendar(calendar_id, auth.uid())
+    AND (is_private IS NOT TRUE OR user_id = auth.uid())
+  );
 
 -- 6. Update RLS on calendar_events to allow farm members
 DROP POLICY IF EXISTS "Users can view their own events" ON calendar_events;

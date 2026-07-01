@@ -253,6 +253,14 @@
           <label for="custom-event-date">Start Date</label>
           <input type="date" id="custom-event-date" class="big-date-input" required>
         </div>
+        <div class="form-group privacy-toggle">
+          <label class="privacy-label">
+            <input type="checkbox" id="custom-event-private">
+            <span class="privacy-checkmark"></span>
+            <span class="privacy-text">Private event</span>
+            <span class="privacy-icon"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span>
+          </label>
+        </div>
         <div id="custom-event-message" class="auth-message"></div>
         <div class="modal-buttons">
           <button type="submit" id="save-custom-event-btn">Add Event</button>
@@ -265,12 +273,18 @@
   <!-- Custom Events Settings Modal -->
   <div id="custom-events-settings-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content custom-events-modal">
-      <button type="button" id="add-custom-type-btn" class="create-btn-corner">Create</button>
+      <button type="button" id="close-custom-events-settings" class="create-btn-corner btn-secondary">Close</button>
       <h2>Custom Events</h2>
       <p class="modal-note">Create reusable events for your account.</p>
       <div class="custom-type-form">
         <input type="text" id="custom-type-name" placeholder="Choose an event name">
-        <label class="custom-days-field" for="custom-type-duration">
+        <label class="privacy-label custom-type-private">
+          <input type="checkbox" id="custom-type-private">
+          <span class="privacy-checkmark"></span>
+          <span class="privacy-text">Make this event type private</span>
+          <span class="privacy-icon"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span>
+        </label>
+        <label class="custom-days-field-row" for="custom-type-duration">
           <span>Days</span>
           <input type="number" id="custom-type-duration" value="1" min="1" max="30">
         </label>
@@ -279,7 +293,7 @@
       <div id="custom-type-message" class="auth-message"></div>
       <div id="custom-event-types-list"></div>
       <div class="modal-buttons">
-        <button type="button" id="close-custom-events-settings" class="btn-secondary">Close</button>
+        <button type="button" id="add-custom-type-btn">Create</button>
       </div>
     </div>
   </div>
