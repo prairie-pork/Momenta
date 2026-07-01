@@ -783,7 +783,6 @@ document.querySelectorAll('.feedback-trigger').forEach(btn => {
   btn.addEventListener('click', () => {
   document.getElementById('feedback-type').value = '';
   document.getElementById('feedback-fields').innerHTML = '';
-  document.getElementById('feedback-email').value = '';
   document.getElementById('feedback-message').className = 'auth-message';
   document.getElementById('feedback-message').textContent = '';
   showModal('feedback-modal');
@@ -830,15 +829,14 @@ document.getElementById('feedback-form').addEventListener('submit', (e) => {
     const el = document.getElementById(field.id);
     const val = el.value.trim();
     if (field.required && !val) { allFilled = false; break; }
-    body += field.label + ':\n' + (val || '(not provided)') + '\n\n';
+    const label = field.label.replace(/[?]\s*$/, '');
+    body += label + ':\n' + (val || '(not provided)') + '\n\n';
   }
   if (!allFilled) {
     msg.className = 'auth-message error';
     msg.textContent = 'Please fill in all required fields.';
     return;
   }
-  const email = document.getElementById('feedback-email').value.trim();
-  if (email) body += 'Reply-to: ' + email + '\n\n';
 
   const subject = '[Momenta] ' + type;
   const mailto = 'mailto:prairepork@proton.me?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body.trim());
