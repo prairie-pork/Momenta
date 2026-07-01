@@ -1343,9 +1343,9 @@ button:hover {
     align-items: center;
     justify-content: center;
     gap: 2px;
-    background: rgba(25, 8, 0, 0.6);
+    background: #190800;
     border: 1px solid rgba(255,255,255,0.12);
-    color: #d4c0a8;
+    color: #ffe4c4;
     font-size: 0.5em;
     padding: 6px 4px;
     cursor: pointer;
@@ -1358,7 +1358,7 @@ button:hover {
   .mobile-nav-btn:hover,
   .mobile-nav-btn.active {
     color: #fff0dc;
-    background: rgba(25, 8, 0, 0.75);
+    background: #2a1408;
   }
   .mobile-nav-btn svg {
     width: 20px;
@@ -1526,13 +1526,13 @@ button:hover {
   /* Disabled mobile nav buttons */
   .mobile-nav-btn.mobile-nav-disabled,
   .mobile-nav-btn:disabled {
-    color: #4a3020;
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
   }
-  .mobile-nav-btn.mobile-nav-disabled:hover {
-    background: transparent;
-    color: #4a3020;
+  .mobile-nav-btn.mobile-nav-disabled:hover,
+  .mobile-nav-btn:disabled:hover {
+    background: #190800;
+
   }
 
   /* Modals: leave breathing room from screen edges */
