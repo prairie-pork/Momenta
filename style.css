@@ -1675,9 +1675,14 @@ button:hover {
     margin-bottom: 2px;
   }
 
-  .private-event-icon svg {
-    width: 10px;
-    height: 10px;
+  .event-badge .private-event-icon {
+    display: block;
+    text-align: center;
+    margin-bottom: 1px;
+  }
+  .event-badge .private-event-icon svg {
+    width: 8px;
+    height: 8px;
   }
 
   .mobile-month-label {
