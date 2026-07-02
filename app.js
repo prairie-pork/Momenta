@@ -1766,7 +1766,8 @@ async function renderGestationTracker() {
 
   // Build bar chart — fixed 120-day axis so scale is consistent
   const axisMax = 120;
-  const chartHeight = 280;
+  const isMobileView = window.innerWidth <= 560;
+  const chartHeight = isMobileView ? 320 : 356;
   const yInterval = 15;
   const ySteps = axisMax / yInterval;
 

@@ -1218,7 +1218,7 @@ button:hover {
   align-items: flex-end;
   justify-content: center;
   width: 100%;
-  min-height: 320px;
+  min-height: 356px;
 }
 
 .gestation-bar {
@@ -2004,7 +2004,7 @@ button:hover {
   }
   .gestation-chart {
     gap: 12px;
-    padding: 30px 4px 0 36px;
+    padding: 0 4px 0 36px;
     min-height: 340px;
   }
   .gestation-yaxis {
@@ -2019,7 +2019,7 @@ button:hover {
     width: 34px;
   }
   .gestation-bar-wrapper {
-    min-height: 240px;
+    min-height: 320px;
   }
   .gestation-bar-name {
     font-size: 0.7em;
