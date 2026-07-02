@@ -1497,6 +1497,133 @@ document.getElementById('print-year-view').addEventListener('click', () => {
 });
 
 // =============================================
+// Tool Buttons (sidebar strip)
+// =============================================
+function setActiveTool(activeId) {
+  document.querySelectorAll('.tool-bubble').forEach(btn => btn.classList.remove('tool-bubble-active'));
+  const active = document.getElementById(activeId);
+  if (active) active.classList.add('tool-bubble-active');
+}
+
+document.getElementById('tool-calendar-btn').addEventListener('click', () => {
+  setActiveTool('tool-calendar-btn');
+  hideModal('gestation-modal');
+  // Calendar is already shown by default, just ensure modals are closed
+});
+
+document.getElementById('tool-gestation-btn').addEventListener('click', async () => {
+  setActiveTool('tool-gestation-btn');
+  await renderGestationTracker();
+  showModal('gestation-modal');
+});
+
+document.getElementById('close-gestation').addEventListener('click', () => {
+  hideModal('gestation-modal');
+  setActiveTool('tool-calendar-btn');
+});
+
+// =============================================
+// Gestation Tracker
+// =============================================
+async function renderGestationTracker() {
+  const container = document.getElementById('gestation-content');
+  if (!container) return;
+
+  if (!(await ensureActiveCalendar())) {
+    container.innerHTML = '<p class="gestation-empty">Select a farm to view gestation.</p>';
+    return;
+  }
+
+  container.innerHTML = '<p style="text-align:center;color:#888;">Loading...</p>';
+
+  // Fetch breed events and farrowing events for the current calendar
+  const { data: breedEvents } = await supabase
+    .from('events')
+    .select('batch_name, batch_number, start_date, end_date')
+    .eq('event_type', 'breed')
+    .eq('calendar_id', currentCalendarId)
+    .order('start_date', { ascending: true });
+
+  const { data: farrowEvents } = await supabase
+    .from('events')
+    .select('batch_name, batch_number')
+    .eq('event_type', 'farrowing')
+    .eq('calendar_id', currentCalendarId);
+
+  if (!breedEvents || breedEvents.length === 0) {
+    container.innerHTML = '<p class="gestation-empty">No batches in gestation yet. Create a batch to get started.</p>';
+    return;
+  }
+
+  // Build set of batch keys that have farrowed
+  const farrowed = new Set();
+  if (farrowEvents) {
+    for (const f of farrowEvents) {
+      farrowed.add(f.batch_name + '|' + f.batch_number);
+    }
+  }
+
+  // Filter to only in-gestation batches
+  const today = new Date();
+  const PREGNANCY_MAX = 120;
+  const gestationBatches = [];
+
+  for (const b of breedEvents) {
+    const key = b.batch_name + '|' + b.batch_number;
+    if (farrowed.has(key)) continue;
+
+    const breedStart = new Date(b.start_date + 'T00:00:00');
+    const daysSince = Math.round((today - breedStart) / (1000 * 60 * 60 * 24));
+    gestationBatches.push({
+      batch_name: b.batch_name,
+      batch_number: b.batch_number,
+      days: Math.max(0, daysSince),
+      breed_date: b.start_date
+    });
+  }
+
+  if (gestationBatches.length === 0) {
+    container.innerHTML = '<p class="gestation-empty">All batches have farrowed. Nothing in gestation right now.</p>';
+    return;
+  }
+
+  // Build bar chart
+  const maxDays = Math.max(...gestationBatches.map(g => g.days), PREGNANCY_MAX);
+  const chartHeight = 280;
+  const ySteps = 5;
+  const yInterval = Math.ceil(maxDays / ySteps / 10) * 10 || 10;
+
+  let html = '<div class="gestation-chart">';
+
+  // Y-axis
+  html += '<div class="gestation-yaxis">';
+  for (let i = 0; i <= ySteps; i++) {
+    const val = yInterval * (ySteps - i);
+    html += '<span>' + val + '</span>';
+  }
+  html += '</div>';
+
+  // Bars
+  for (const g of gestationBatches) {
+    const pct = Math.min(g.days / maxDays, 1);
+    const barH = Math.max(4, Math.round(pct * chartHeight));
+    const label = batchDisplayName(g.batch_name, g.batch_number);
+    html += '<div class="gestation-bar-col">';
+    html += '<div class="gestation-bar-wrapper">';
+    html += '<div class="gestation-bar" style="height:' + barH + 'px">';
+    html += '<span class="gestation-bar-label">' + g.days + 'd</span>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="gestation-bar-name">' + escapeHtml(label) + '</div>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+// =============================================
 // Manage Farm Modal
 // =============================================
 document.getElementById('manage-farm-btn').addEventListener('click', async () => {
@@ -1966,6 +2093,10 @@ loadingScreen.style.display = 'none';
   document.getElementById('mobile-all-events-btn').addEventListener('click', () => {
     closeAllDrawers();
     document.getElementById('all-events-btn').click();
+  });
+  document.getElementById('mobile-gestation-btn').addEventListener('click', () => {
+    closeAllDrawers();
+    document.getElementById('tool-gestation-btn').click();
   });
   document.getElementById('mobile-year-view-btn').addEventListener('click', () => {
     closeAllDrawers();

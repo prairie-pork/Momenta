@@ -32,10 +32,19 @@ button:hover {
 }
 
 .sidebar {
-    width: 260px;
-    min-width: 260px;
+    width: 310px;
+    min-width: 310px;
     background-color: #f5ebe0;
     border-right: 2px solid #190800;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    box-sizing: border-box;
+}
+
+.sidebar-content {
+    width: 260px;
+    min-width: 260px;
     padding: 16px 14px;
     display: flex;
     flex-direction: column;
@@ -239,6 +248,59 @@ button:hover {
 .sidebar-btn:disabled:hover,
 .month-nav-arrow:disabled:hover {
     background-color: #efe3d6;
+}
+
+/* =============================================
+   Sidebar Tool Strip
+   ============================================= */
+.sidebar-tools {
+    width: 50px;
+    min-width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 10px;
+    border-left: 1px solid #d4c4b0;
+    background: #efe3d6;
+    box-sizing: border-box;
+}
+
+.tool-bubble {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: #f5ebe0;
+    color: #4a3020;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.tool-bubble:hover {
+    background: #190800;
+    color: #ffe4c4;
+    transform: scale(1.1);
+}
+.tool-bubble:active {
+    transform: scale(0.95);
+}
+.tool-bubble.tool-bubble-active {
+    background: #190800;
+    color: #ffe4c4;
+    box-shadow: 0 0 0 2px #190800;
+}
+.tool-bubble:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    background: #efe3d6;
+    color: #a09080;
+    box-shadow: none;
 }
 
 .empty-farms {
@@ -1024,6 +1086,126 @@ button:hover {
 }
 
 /* =============================================
+   GESTATION TRACKER
+   ============================================= */
+.gestation-modal {
+  max-width: 900px;
+}
+
+.gestation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.gestation-header h2 {
+  margin: 0;
+}
+
+#gestation-content {
+  min-height: 300px;
+}
+
+.gestation-empty {
+  text-align: center;
+  color: #888;
+  margin-top: 60px;
+  font-size: 1em;
+}
+
+.gestation-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 0 10px 0 40px;
+  min-height: 320px;
+  position: relative;
+  overflow-x: auto;
+}
+
+/* Y-axis labels */
+.gestation-yaxis {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 30px;
+  width: 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 0.7em;
+  color: #888;
+  text-align: right;
+  padding-right: 4px;
+}
+.gestation-yaxis span {
+  line-height: 1;
+}
+
+/* Individual bar column */
+.gestation-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 48px;
+}
+
+.gestation-bar-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  min-height: 260px;
+}
+
+.gestation-bar {
+  width: 36px;
+  border-radius: 4px 4px 0 0;
+  background: #0f766e;
+  min-height: 4px;
+  transition: height 0.3s;
+  position: relative;
+}
+
+/* Day count label on bar */
+.gestation-bar-label {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7em;
+  font-weight: bold;
+  color: #190800;
+  white-space: nowrap;
+}
+
+/* Batch name under bar */
+.gestation-bar-name {
+  font-size: 0.65em;
+  color: #555;
+  text-align: center;
+  margin-top: 6px;
+  line-height: 1.2;
+  max-width: 48px;
+  word-wrap: break-word;
+}
+
+/* Progress bar bottom border colors by stage */
+.gestation-bar.early { background: #84cc16; }
+.gestation-bar.mid   { background: #eab308; }
+.gestation-bar.late  { background: #ea580c; }
+
+/* Gestation bar colors by fill */
+.gestation-bar-col:nth-child(6n+1) .gestation-bar { background: #0f766e; }
+.gestation-bar-col:nth-child(6n+2) .gestation-bar { background: #0891b2; }
+.gestation-bar-col:nth-child(6n+3) .gestation-bar { background: #7c2d12; }
+.gestation-bar-col:nth-child(6n+4) .gestation-bar { background: #475569; }
+.gestation-bar-col:nth-child(6n+5) .gestation-bar { background: #0369a1; }
+.gestation-bar-col:nth-child(6n+6) .gestation-bar { background: #a16207; }
+
+/* =============================================
    PRINT STYLES
    ============================================= */
 
@@ -1703,6 +1885,34 @@ button:hover {
   #year-view-year {
     min-width: 40px;
     font-size: 0.9em;
+  }
+
+  /* Gestation tracker mobile */
+  .gestation-modal {
+    margin: 0 8px;
+    max-height: 90vh;
+  }
+  .gestation-chart {
+    gap: 10px;
+    padding: 0 4px 0 32px;
+    min-height: 240px;
+  }
+  .gestation-yaxis {
+    width: 28px;
+    font-size: 0.6em;
+  }
+  .gestation-bar-col {
+    width: 36px;
+  }
+  .gestation-bar {
+    width: 26px;
+  }
+  .gestation-bar-wrapper {
+    min-height: 200px;
+  }
+  .gestation-bar-name {
+    font-size: 0.55em;
+    max-width: 36px;
   }
 }
 
