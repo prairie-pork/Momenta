@@ -2459,5 +2459,3 @@ if (mobileTimeReset) {
     }
   });
 })();
-
-})();
