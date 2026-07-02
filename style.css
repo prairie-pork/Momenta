@@ -2004,8 +2004,8 @@ button:hover {
   }
   .gestation-chart {
     gap: 12px;
-    padding: 0 4px 0 36px;
-    min-height: 280px;
+    padding: 30px 4px 0 36px;
+    min-height: 340px;
   }
   .gestation-yaxis {
     width: 32px;
