@@ -267,24 +267,24 @@ button:hover {
 }
 
 .tool-bubble {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     padding: 0;
-    border: none;
-    border-radius: 50%;
-    background: #f5ebe0;
-    color: #4a3020;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    background: rgba(25, 8, 0, 0.6);
+    color: #d4c0a8;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background 0.15s, color 0.15s, transform 0.15s;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .tool-bubble:hover {
-    background: #190800;
-    color: #ffe4c4;
-    transform: scale(1.1);
+    background: rgba(25, 8, 0, 0.85);
+    color: #fff0dc;
+    transform: scale(1.05);
 }
 .tool-bubble:active {
     transform: scale(0.95);
@@ -292,15 +292,49 @@ button:hover {
 .tool-bubble.tool-bubble-active {
     background: #190800;
     color: #ffe4c4;
-    box-shadow: 0 0 0 2px #190800;
+    border-color: rgba(255,255,255,0.2);
 }
 .tool-bubble:disabled {
-    opacity: 0.35;
+    opacity: 0.3;
     cursor: not-allowed;
     transform: none;
-    background: #efe3d6;
-    color: #a09080;
+    background: rgba(25, 8, 0, 0.3);
+    color: #8a7a6a;
     box-shadow: none;
+    border-color: transparent;
+}
+
+/* Time Travel */
+.sidebar-timetravel {
+  padding: 10px 0;
+}
+#time-travel-slider {
+  width: 100%;
+  margin: 4px 0;
+  accent-color: #190800;
+  cursor: pointer;
+}
+.timetravel-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8em;
+  color: #6c5b4a;
+}
+#time-travel-label {
+  font-weight: 600;
+}
+#time-travel-reset {
+  font-size: 0.85em;
+  padding: 2px 8px;
+  background: #d4c4b0;
+  border: none;
+  border-radius: 4px;
+  color: #190800;
+  cursor: pointer;
+}
+#time-travel-reset:hover {
+  background: #c7b299;
 }
 
 .empty-farms {

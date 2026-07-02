@@ -13,6 +13,14 @@ async function retryQuery(fn, tries = 3, delay = 1500) {
   }
 }
 
+// Time travel offset for testing (days to add to "today")
+let timeTravelDays = 0;
+function getToday() {
+  const d = new Date();
+  d.setDate(d.getDate() + timeTravelDays);
+  return d;
+}
+
 const user = await requireAuth();
 if (!user) {
   throw new Error('Redirecting to login...');
@@ -227,7 +235,7 @@ const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const dayCells = document.querySelectorAll('.day-cell');
 
-const currentDate = new Date();
+const currentDate = getToday();
 let currentMonthIndex = currentDate.getMonth();
 let currentYear = currentDate.getFullYear();
 
@@ -577,7 +585,7 @@ async function updateCalendar() {
   const firstDayIndex = new Date(currentYear, currentMonthIndex, 1).getDay();
   const totalDays = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
 
-  const today = new Date();
+  const today = getToday();
 
   // Fetch notes AND batch events in parallel
   const [notesByDay, batchEvents] = await Promise.all([
@@ -690,7 +698,7 @@ nextBtn.addEventListener('click', async () => {
 });
 
 document.getElementById('today-btn').addEventListener('click', async () => {
-  const t = new Date();
+  const t = getToday();
   currentMonthIndex = t.getMonth();
   currentYear = t.getFullYear();
   await updateCalendar();
@@ -848,7 +856,7 @@ document.getElementById('feedback-form').addEventListener('submit', (e) => {
 // Add Batch Modal
 // =============================================
 document.getElementById('add-batch-btn').addEventListener('click', () => {
-  const today = new Date();
+  const today = getToday();
   document.getElementById('batch-breed-date').value = fmtDate(today);
   document.getElementById('batch-name-prefix').value = 'Batch';
   document.getElementById('batch-count').value = 1;
@@ -891,7 +899,7 @@ async function populateCustomEventTypeSelect() {
 }
 
 document.getElementById('add-custom-event-btn').addEventListener('click', async () => {
-  const today = new Date();
+  const today = getToday();
   document.getElementById('custom-event-date').value = fmtDate(today);
   const privateCheckbox = document.getElementById('custom-event-private');
   privateCheckbox.checked = false;
@@ -1564,7 +1572,7 @@ async function renderGestationTracker() {
   }
 
   // Filter to only in-gestation batches
-  const today = new Date();
+  const today = getToday();
   const PREGNANCY_MAX = 120;
   const gestationBatches = [];
 
@@ -1965,6 +1973,39 @@ try {
 } catch (e) { console.error('updateCalendar failed after retries:', e); }
 
 loadingScreen.style.display = 'none';
+
+// =============================================
+// Time Travel Slider
+// =============================================
+const timeSlider = document.getElementById('time-travel-slider');
+const timeLabel = document.getElementById('time-travel-label');
+const timeReset = document.getElementById('time-travel-reset');
+
+function updateTimeTravelLabel() {
+  if (timeTravelDays === 0) {
+    timeLabel.textContent = 'Today';
+  } else if (timeTravelDays === 1) {
+    timeLabel.textContent = 'Today + 1 day';
+  } else {
+    timeLabel.textContent = 'Today + ' + timeTravelDays + ' days';
+  }
+}
+
+if (timeSlider) {
+  timeSlider.addEventListener('input', () => {
+    timeTravelDays = parseInt(timeSlider.value);
+    updateTimeTravelLabel();
+    updateCalendar();
+  });
+}
+if (timeReset) {
+  timeReset.addEventListener('click', () => {
+    timeTravelDays = 0;
+    timeSlider.value = 0;
+    updateTimeTravelLabel();
+    updateCalendar();
+  });
+}
 
 // =============================================
 // Mobile Nav Wiring
