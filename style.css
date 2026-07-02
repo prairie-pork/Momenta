@@ -1255,19 +1255,16 @@ button:hover {
   position: absolute;
   right: 10px;
   height: 0;
-  border-top: 2px dashed rgba(0,0,0,0.25);
+  border-top: 2px solid rgba(0,0,0,0.25);
   pointer-events: none;
   z-index: 2;
 }
 .gestation-line-label {
   position: absolute;
-  left: 0;
-  top: -8px;
   font-size: 0.65em;
   font-weight: 600;
   color: #555;
   white-space: nowrap;
-  transform: translateY(-50%);
   background: rgba(255,255,255,0.85);
   padding: 0 4px;
   border-radius: 2px;

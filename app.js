@@ -270,7 +270,7 @@ const LOCK_ICON = '<span class="private-event-icon"><svg viewBox="0 0 16 16" wid
 function eventStyle(type, evt) {
   if (EVENT_STYLES[type]) return EVENT_STYLES[type];
   if (type === 'gestation_event') {
-    return { label: evt ? evt.gestation_type_name || 'Gestation' : 'Gestation', badge: evt ? evt.gestation_type_color || '#64748b' : '#64748b', bg: 'transparent' };
+    return { label: evt ? evt.gestation_type_name || 'Gestation' : 'Gestation', badge: evt ? evt.gestation_type_color || '#64748b' : '#64748b', bg: evt ? hexToRgba(evt.gestation_type_color, 0.18) : 'transparent' };
   }
   if (type && type.startsWith('custom:')) {
     const id = type.slice(7);
@@ -295,7 +295,7 @@ function sortEventsForDisplay(events) {
 }
 
 function importantEventForBackground(events) {
-  return (events || []).find(evt => !isCustomEvent(evt) && evt.event_type !== 'gestation_event');
+  return (events || []).find(evt => !isCustomEvent(evt));
 }
 
 function hexToRgba(hex, alpha) {
@@ -1756,11 +1756,13 @@ async function renderGestationTracker() {
   const gestEventTypes = customEventTypes.filter(t => t.gestation_day != null);
   if (gestEventTypes.length > 0) {
     const lineBottomBase = 24;
+    const numBars = gestationBatches.length;
+    const labelLeft = Math.round(numBars * 88 - 28);
     for (const gt of gestEventTypes) {
       const dayVal = Math.min(gt.gestation_day, maxDays);
       const lineBottom = Math.round(lineBottomBase + (dayVal / maxDays) * chartHeight);
       html += '<div class="gestation-line" style="bottom:' + lineBottom + 'px;left:54px;border-top-color:' + escapeAttr(gt.color) + ';">';
-      html += '<span class="gestation-line-label" style="color:' + escapeAttr(gt.color) + ';">' + escapeHtml(gt.name) + ' d' + gt.gestation_day + '</span>';
+      html += '<span class="gestation-line-label" style="left:' + labelLeft + 'px;top:-8px;color:' + escapeAttr(gt.color) + ';">' + escapeHtml(gt.name) + ' d' + gt.gestation_day + '</span>';
       html += '</div>';
     }
   }
