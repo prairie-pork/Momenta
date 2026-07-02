@@ -923,6 +923,7 @@ button:hover {
   padding: 0 6px;
   margin-left: 6px;
   vertical-align: middle;
+  flex-shrink: 0;
 }
 
 /* =============================================
