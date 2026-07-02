@@ -1302,9 +1302,11 @@ document.getElementById('all-events-btn').addEventListener('click', async () => 
       const rescheduleLabel = g.isCustom ? g.batchName : batchDisplayName(g.batchName, g.batchNumber);
       html += '<button data-action="reschedule" data-id="' + escapeAttr(evt.id) + '" data-type="' + escapeAttr(evt.event_type) + '" data-start="' + escapeAttr(evt.start_date) + '" data-end="' + escapeAttr(evt.end_date || '') + '" data-batch="' + escapeAttr(rescheduleLabel) + '" data-batch-name="' + batchNameAttr + '" data-batch-number="' + batchNumberAttr + '">Reschedule</button>';
       html += '</div>';
-    }
+  }
 
-    html += '</div>';
+  html += '<div style="margin-top:8px;font-size:0.65em;color:#999;text-align:center;">Breed: ' + (breedEvents?.length || 0) + ' | Lock-ups: ' + (movedInEvents?.length || 0) + ' | In gestation: ' + gestationBatches.length + ' | Today: ' + todayStr + '</div>';
+
+  html += '</div>';
   }
 
   container.innerHTML = html;
@@ -2279,9 +2281,9 @@ function onTimeTravelChange(val) {
   if (mobileTimeSlider) mobileTimeSlider.value = val;
   updateTimeTravelLabel();
   updateCalendar();
-  // Re-render gestation tracker if modal is open so batches appear/leave based on new offset
-  const gestationModal = document.getElementById('gestation-modal');
-  if (gestationModal && gestationModal.style.display !== 'none') {
+  // Re-render gestation tracker if its content area has been populated
+  const gestContent = document.getElementById('gestation-content');
+  if (gestContent && gestContent.innerHTML && gestContent.innerHTML.indexOf('gestation-bar') !== -1) {
     renderGestationTracker();
   }
 }
