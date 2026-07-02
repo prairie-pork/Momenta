@@ -77,6 +77,14 @@
       <button id="mobile-all-events-btn" class="sidebar-btn" style="margin-bottom:6px;">All Events</button>
       <button id="mobile-gestation-btn" class="sidebar-btn" style="margin-bottom:6px;">Gestation Tracker</button>
       <button id="mobile-year-view-btn" class="sidebar-btn">Year View</button>
+      <div style="margin-top:16px;border-top:1px solid #d4c4b0;padding-top:12px;">
+        <div style="font-size:0.85em;font-weight:700;color:#190800;margin-bottom:6px;">Time Travel</div>
+        <input type="range" id="mobile-time-travel-slider" min="0" max="365" value="0" style="width:100%;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+          <span id="mobile-time-travel-label" style="font-size:0.85em;color:#888;">Today</span>
+          <button id="mobile-time-travel-reset" class="sidebar-btn-sm">Reset</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -481,6 +489,17 @@
       </div>
       <div id="gestation-content">
         <p style="text-align:center;color:#888;">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Details Modal -->
+  <div id="event-detail-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width:380px;">
+      <h2 id="event-detail-title"></h2>
+      <div id="event-detail-body"></div>
+      <div class="modal-buttons">
+        <button type="button" id="close-event-detail" class="btn-secondary">Close</button>
       </div>
     </div>
   </div>

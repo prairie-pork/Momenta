@@ -2003,6 +2003,11 @@ button:hover {
     font-size: 0.75em;
     top: -20px;
   }
+  .gestation-line-label {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 /* =============================================

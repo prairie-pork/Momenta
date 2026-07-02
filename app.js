@@ -753,6 +753,10 @@ async function updateCalendar() {
           badge.textContent = style.label;
         }
         labelsDiv.appendChild(badge);
+        badge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showEventDetail(evt, style);
+        });
       }
       cell.appendChild(labelsDiv);
     }
@@ -995,10 +999,10 @@ async function populateCustomEventTypeSelect() {
   const select = document.getElementById('custom-event-type');
   if (!select) return;
   if (customEventTypes.length === 0) {
-    select.innerHTML = '<option value="">Create a custom event in Settings first</option>';
+    select.innerHTML = '<option value="">No custom events — create one in Settings</option>';
     return;
   }
-  select.innerHTML = customEventTypes.map(t => {
+  select.innerHTML = '<option value="">Select an event</option>' + customEventTypes.map(t => {
     const days = Number(t.duration_days || 1);
     const label = t.name + ' - ' + days + ' day' + (days === 1 ? '' : 's');
     return '<option value="' + escapeAttr(t.id) + '">' + escapeHtml(label) + '</option>';
@@ -1638,6 +1642,33 @@ document.getElementById('close-gestation').addEventListener('click', () => {
 });
 
 // =============================================
+// Event Detail Modal
+// =============================================
+function showEventDetail(evt, style) {
+  const title = document.getElementById('event-detail-title');
+  const body = document.getElementById('event-detail-body');
+  const batchLabel = batchDisplayName(evt.batch_name, evt.batch_number);
+  const dateStr = evt.start_date + (evt.end_date && evt.end_date !== evt.start_date ? ' – ' + evt.end_date : '');
+  const isCustom = evt.event_type.startsWith('custom:');
+  const typeLabel = style ? style.label : 'Event';
+  const icon = evt.is_private ? LOCK_ICON : '';
+  title.innerHTML = icon + escapeHtml(typeLabel);
+  body.innerHTML = ''
+    + '<div style="margin:12px 0;"><strong>Batch:</strong> ' + escapeHtml(batchLabel) + '</div>'
+    + '<div style="margin:12px 0;"><strong>Date:</strong> ' + escapeHtml(dateStr) + '</div>'
+    + (isCustom ? '<div style="margin:12px 0;"><strong>Type:</strong> Custom Event</div>' : '')
+    + '<div style="margin-top:16px;display:flex;align-items:center;gap:8px;">'
+    + '<span style="width:14px;height:14px;border-radius:4px;background:' + escapeAttr(style.badge) + ';flex-shrink:0;"></span>'
+    + '<span style="font-size:0.85em;color:#666;">' + escapeHtml(typeLabel) + '</span>'
+    + '</div>';
+  showModal('event-detail-modal');
+}
+
+document.getElementById('close-event-detail').addEventListener('click', () => {
+  hideModal('event-detail-modal');
+});
+
+// =============================================
 // Gestation Tracker
 // =============================================
 async function renderGestationTracker() {
@@ -2153,31 +2184,35 @@ loadingScreen.style.display = 'none';
 const timeSlider = document.getElementById('time-travel-slider');
 const timeLabel = document.getElementById('time-travel-label');
 const timeReset = document.getElementById('time-travel-reset');
+const mobileTimeSlider = document.getElementById('mobile-time-travel-slider');
+const mobileTimeLabel = document.getElementById('mobile-time-travel-label');
+const mobileTimeReset = document.getElementById('mobile-time-travel-reset');
 
 function updateTimeTravelLabel() {
-  if (timeTravelDays === 0) {
-    timeLabel.textContent = 'Today';
-  } else if (timeTravelDays === 1) {
-    timeLabel.textContent = 'Today + 1 day';
-  } else {
-    timeLabel.textContent = 'Today + ' + timeTravelDays + ' days';
-  }
+  const text = timeTravelDays === 0 ? 'Today' : timeTravelDays === 1 ? 'Today + 1 day' : 'Today + ' + timeTravelDays + ' days';
+  if (timeLabel) timeLabel.textContent = text;
+  if (mobileTimeLabel) mobileTimeLabel.textContent = text;
+}
+
+function onTimeTravelChange(val) {
+  timeTravelDays = val;
+  if (timeSlider) timeSlider.value = val;
+  if (mobileTimeSlider) mobileTimeSlider.value = val;
+  updateTimeTravelLabel();
+  updateCalendar();
 }
 
 if (timeSlider) {
-  timeSlider.addEventListener('input', () => {
-    timeTravelDays = parseInt(timeSlider.value);
-    updateTimeTravelLabel();
-    updateCalendar();
-  });
+  timeSlider.addEventListener('input', () => onTimeTravelChange(parseInt(timeSlider.value)));
 }
 if (timeReset) {
-  timeReset.addEventListener('click', () => {
-    timeTravelDays = 0;
-    timeSlider.value = 0;
-    updateTimeTravelLabel();
-    updateCalendar();
-  });
+  timeReset.addEventListener('click', () => onTimeTravelChange(0));
+}
+if (mobileTimeSlider) {
+  mobileTimeSlider.addEventListener('input', () => onTimeTravelChange(parseInt(mobileTimeSlider.value)));
+}
+if (mobileTimeReset) {
+  mobileTimeReset.addEventListener('click', () => onTimeTravelChange(0));
 }
 
 // =============================================
