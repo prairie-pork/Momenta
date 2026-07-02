@@ -539,7 +539,7 @@
       authScript.src = 'auth.js';
       authScript.onload = function () {
         var appScript = document.createElement('script');
-        appScript.src = 'app.js';
+        appScript.src = 'app.js?v=' + Date.now();
         document.body.appendChild(appScript);
       };
       document.body.appendChild(authScript);
