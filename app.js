@@ -722,6 +722,7 @@ async function updateCalendar() {
         const badge = document.createElement('span');
         badge.classList.add('event-badge', evt.event_type);
         badge.style.backgroundColor = style.badge;
+        badge.title = style.label + (evt.event_type === 'gestation_event' ? ' — ' + batchDisplayName(evt.batch_name, evt.batch_number) + ' (' + evt.start_date + ')' : (evt.batch_name ? ' — ' + batchDisplayName(evt.batch_name, evt.batch_number) : ''));
         const isCustom = evt.event_type.startsWith('custom:');
         const isGestation = evt.event_type === 'gestation_event';
         if (!isCustom && !primaryBadgeRendered && !isGestation) {
@@ -1793,7 +1794,7 @@ async function renderGestationTracker() {
       const dayVal = Math.min(gt.gestation_day, axisMax);
       const lineBottom = Math.round(lineBottomBase + (dayVal / axisMax) * chartHeight);
       html += '<div class="gestation-line" style="bottom:' + lineBottom + 'px;left:54px;border-top-color:' + escapeAttr(gt.color) + ';">';
-      html += '<span class="gestation-line-label" style="left:' + labelLeft + 'px;top:-8px;color:' + escapeAttr(gt.color) + ';">' + escapeHtml(gt.name) + ' d' + gt.gestation_day + '</span>';
+      html += '<span class="gestation-line-label" title="' + escapeAttr(gt.name) + ' d' + gt.gestation_day + '" style="left:' + labelLeft + 'px;top:-8px;color:' + escapeAttr(gt.color) + ';">' + escapeHtml(gt.name) + ' d' + gt.gestation_day + '</span>';
       html += '</div>';
     }
   }
