@@ -1817,7 +1817,25 @@ async function renderGestationTracker() {
     }
   }
 
-  html += '<div style="margin-top:8px;font-size:0.65em;color:#999;text-align:center;">Breed: ' + (breedEvents?.length || 0) + ' | Lock-ups: ' + (movedInEvents?.length || 0) + ' | In gestation: ' + gestationBatches.length + ' | Today: ' + todayStr + '</div>';
+  // Debug: show per-batch status
+  let debugBatchLines = '';
+  for (const b of breedEvents) {
+    const key = b.batch_name + '|' + b.batch_number;
+    const movedInDate = movedInMap[key];
+    const filtered = movedInDate && movedInDate <= todayStr;
+    const isInGest = gestationBatches.some(g => g.batch_name === b.batch_name && g.batch_number === b.batch_number);
+    debugBatchLines += '<div>' + escapeHtml(batchDisplayName(b.batch_name, b.batch_number))
+      + ' — breed: ' + b.start_date
+      + (movedInDate ? ', lock_up: ' + movedInDate : ', no lock_up')
+      + (filtered ? ' ✅ EXCLUDED (moved in)' : isInGest ? ' ⏳ in gestation' : ' ❌ unknown')
+      + '</div>';
+  }
+
+  html += '<div style="margin-top:8px;font-size:0.65em;color:#999;text-align:center;">'
+    + 'Breed: ' + (breedEvents?.length || 0) + ' | Lock-ups: ' + (movedInEvents?.length || 0)
+    + ' | In gestation: ' + gestationBatches.length + ' | Today: ' + todayStr
+    + '</div>';
+  html += '<div style="font-size:0.6em;color:#aaa;text-align:left;max-height:80px;overflow-y:auto;">' + debugBatchLines + '</div>';
 
   html += '</div>';
 
@@ -2258,11 +2276,8 @@ function onTimeTravelChange(val) {
   if (mobileTimeSlider) mobileTimeSlider.value = val;
   updateTimeTravelLabel();
   updateCalendar();
-  // Re-render gestation tracker if its content area has been populated
-  const gestContent = document.getElementById('gestation-content');
-  if (gestContent && gestContent.innerHTML && gestContent.innerHTML.indexOf('gestation-bar') !== -1) {
-    renderGestationTracker();
-  }
+  // Always re-render gestation tracker when slider moves
+  renderGestationTracker();
 }
 
 if (timeSlider) {
