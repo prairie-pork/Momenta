@@ -267,8 +267,11 @@ let customEventTypes = [];
 let selectedCustomColor = CUSTOM_EVENT_COLORS[0];
 const LOCK_ICON = '<span class="private-event-icon"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="9" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span>';
 
-function eventStyle(type) {
+function eventStyle(type, evt) {
   if (EVENT_STYLES[type]) return EVENT_STYLES[type];
+  if (type === 'gestation_event') {
+    return { label: evt ? evt.gestation_type_name || 'Gestation' : 'Gestation', badge: evt ? evt.gestation_type_color || '#64748b' : '#64748b', bg: 'transparent' };
+  }
   if (type && type.startsWith('custom:')) {
     const id = type.slice(7);
     const custom = customEventTypes.find(t => t.id === id);
@@ -284,15 +287,15 @@ function isCustomEvent(evt) {
 
 function sortEventsForDisplay(events) {
   return [...(events || [])].sort((a, b) => {
-    const aCustom = isCustomEvent(a);
-    const bCustom = isCustomEvent(b);
-    if (aCustom !== bCustom) return aCustom ? 1 : -1;
+    const aLow = isCustomEvent(a) || a.event_type === 'gestation_event';
+    const bLow = isCustomEvent(b) || b.event_type === 'gestation_event';
+    if (aLow !== bLow) return aLow ? 1 : -1;
     return String(a.start_date || '').localeCompare(String(b.start_date || ''));
   });
 }
 
 function importantEventForBackground(events) {
-  return (events || []).find(evt => !isCustomEvent(evt));
+  return (events || []).find(evt => !isCustomEvent(evt) && evt.event_type !== 'gestation_event');
 }
 
 function hexToRgba(hex, alpha) {
@@ -404,14 +407,18 @@ async function loadCalendarCustomEventTypes() {
     .filter('event_type', 'like', 'custom:%');
   if (!eventTypes || eventTypes.length === 0) {
     console.log('[Momenta] loadCalendarCustomEventTypes: no custom events in this calendar');
-    return customEventTypes;
+    // Still try to load shared gestation event types from farm members
+    return loadSharedGestationEventTypes();
   }
 
   const ids = [...new Set(eventTypes.map(e => e.event_type.slice(7)))];
   const ownIds = new Set(customEventTypes.map(t => t.id));
   const missingIds = ids.filter(id => !ownIds.has(id));
   console.log('[Momenta] loadCalendarCustomEventTypes: found ' + ids.length + ' custom type(s) in calendar, ' + missingIds.length + ' missing (not owned by current user)');
-  if (missingIds.length === 0) return customEventTypes;
+  if (missingIds.length === 0) {
+    // Still try to load shared gestation event types from farm members
+    return loadSharedGestationEventTypes();
+  }
 
   console.log('[Momenta] loadCalendarCustomEventTypes: fetching shared types', missingIds);
   const { data: sharedTypes, error: sharedErr } = await supabase
@@ -425,7 +432,35 @@ async function loadCalendarCustomEventTypes() {
   } else {
     console.warn('[Momenta] loadCalendarCustomEventTypes: shared types query returned 0 results — likely an RLS block. missingIds:', missingIds);
   }
+  // Also load shared gestation event types from farm members
+  await loadSharedGestationEventTypes();
   return customEventTypes;
+}
+
+async function loadSharedGestationEventTypes() {
+  if (!currentCalendarId) return;
+  // Fetch IDs of farm members (other users in this calendar)
+  const { data: members } = await supabase
+    .from('calendar_members')
+    .select('user_id')
+    .eq('calendar_id', currentCalendarId);
+  if (!members || members.length === 0) return;
+  const memberIds = [...new Set(members.map(m => m.user_id))].filter(uid => uid !== user.id);
+  if (memberIds.length === 0) return;
+
+  const ownIds = new Set(customEventTypes.map(t => t.id));
+  const { data: gestTypes } = await supabase
+    .from('custom_event_types')
+    .select('*')
+    .in('created_by', memberIds)
+    .not('gestation_day', 'is', null);
+  if (gestTypes) {
+    const newTypes = gestTypes.filter(t => !ownIds.has(t.id));
+    if (newTypes.length > 0) {
+      console.log('[Momenta] loadSharedGestationEventTypes: loaded ' + newTypes.length + ' shared gestation types from farm members');
+      customEventTypes.push(...newTypes);
+    }
+  }
 }
 
 // Build a map: { '2026-06-02': [event, ...], ... }
@@ -454,7 +489,8 @@ const DEFAULT_CONFIG = {
   lock_up_before_farrowing: 2,
   vaccinate_after_farrowing: 10,
   weaning_after_farrowing: 23,
-  batch_spacing_days: 14
+  batch_spacing_days: 14,
+  show_gestation_events: false
 };
 
 let currentConfig = { ...DEFAULT_CONFIG };
@@ -483,7 +519,8 @@ async function loadConfig() {
       lock_up_before_farrowing: data.lock_up_before_farrowing,
       vaccinate_after_farrowing: data.vaccinate_after_farrowing,
       weaning_after_farrowing: data.weaning_after_farrowing,
-      batch_spacing_days: data.batch_spacing_days
+      batch_spacing_days: data.batch_spacing_days,
+      show_gestation_events: data.show_gestation_events || false
     };
   }
 }
@@ -498,7 +535,8 @@ async function saveConfig(config) {
       lock_up_before_farrowing: config.lock_up_before_farrowing,
       vaccinate_after_farrowing: config.vaccinate_after_farrowing,
       weaning_after_farrowing: config.weaning_after_farrowing,
-      batch_spacing_days: config.batch_spacing_days
+      batch_spacing_days: config.batch_spacing_days,
+      show_gestation_events: config.show_gestation_events || false
     }, { onConflict: 'user_id' });
   if (error) throw error;
 }
@@ -594,6 +632,61 @@ async function updateCalendar() {
   ]);
   const eventsMap = buildEventsMap(batchEvents);
 
+  // Add gestation calendar events if enabled
+  if (currentConfig.show_gestation_events && currentCalendarId) {
+    const gestTypes = customEventTypes.filter(t => t.gestation_day != null);
+    if (gestTypes.length > 0) {
+      const ym = currentYear + '-' + String(currentMonthIndex + 1).padStart(2, '0');
+      const monthStartStr = ym + '-01';
+      const monthEndStr = ym + '-' + String(totalDays).padStart(2, '0');
+      const todayStr = fmtDate(today);
+
+      const { data: breedEvts } = await supabase
+        .from('events')
+        .select('batch_name, batch_number, start_date')
+        .eq('event_type', 'breed')
+        .eq('calendar_id', currentCalendarId);
+
+      const { data: lockEvts } = await supabase
+        .from('events')
+        .select('batch_name, batch_number, start_date')
+        .eq('event_type', 'lock_up')
+        .eq('calendar_id', currentCalendarId);
+
+      const lockMap = {};
+      if (lockEvts) for (const f of lockEvts) {
+        const k = f.batch_name + '|' + f.batch_number;
+        if (!lockMap[k] || f.start_date < lockMap[k]) lockMap[k] = f.start_date;
+      }
+
+      if (breedEvts) {
+        for (const b of breedEvts) {
+          const k = b.batch_name + '|' + b.batch_number;
+          if (lockMap[k] && lockMap[k] <= todayStr) continue;
+          const breedStart = new Date(b.start_date + 'T00:00:00');
+          for (const gt of gestTypes) {
+            const gd = new Date(breedStart);
+            gd.setDate(gd.getDate() + gt.gestation_day);
+            const gs = fmtDate(gd);
+            if (gs >= monthStartStr && gs <= monthEndStr) {
+              if (!eventsMap[gs]) eventsMap[gs] = [];
+              eventsMap[gs].push({
+                event_type: 'gestation_event',
+                batch_name: b.batch_name,
+                batch_number: b.batch_number,
+                start_date: gs,
+                end_date: null,
+                gestation_type_id: gt.id,
+                gestation_type_name: gt.name,
+                gestation_type_color: gt.color
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
   for (let day = 1; day <= totalDays; day++) {
     const slot = firstDayIndex + day - 1;
     const cell = dayCells[slot];
@@ -617,7 +710,7 @@ async function updateCalendar() {
     if (dayEvents && dayEvents.length > 0) {
       const backgroundEvent = importantEventForBackground(dayEvents) || dayEvents[0];
       if (backgroundEvent) {
-        const backgroundStyle = eventStyle(backgroundEvent.event_type);
+        const backgroundStyle = eventStyle(backgroundEvent.event_type, backgroundEvent);
         cell.style.background = backgroundStyle.bg;
       }
 
@@ -625,12 +718,13 @@ async function updateCalendar() {
       labelsDiv.classList.add('event-labels');
       let primaryBadgeRendered = false;
       for (const evt of dayEvents) {
-        const style = eventStyle(evt.event_type);
+        const style = eventStyle(evt.event_type, evt);
         const badge = document.createElement('span');
         badge.classList.add('event-badge', evt.event_type);
         badge.style.backgroundColor = style.badge;
         const isCustom = evt.event_type.startsWith('custom:');
-        if (!isCustom && !primaryBadgeRendered) {
+        const isGestation = evt.event_type === 'gestation_event';
+        if (!isCustom && !primaryBadgeRendered && !isGestation) {
           primaryBadgeRendered = true;
           badge.classList.add('primary-badge');
           const typeSpan = document.createElement('span');
@@ -638,6 +732,16 @@ async function updateCalendar() {
           const batchSpan = document.createElement('span');
           batchSpan.textContent = batchDisplayName(evt.batch_name, evt.batch_number);
           badge.appendChild(typeSpan);
+          badge.appendChild(batchSpan);
+        } else if (isGestation) {
+          badge.classList.add('gestation-badge');
+          const nameSpan = document.createElement('span');
+          nameSpan.classList.add('gestation-badge-name');
+          nameSpan.textContent = style.label;
+          const batchSpan = document.createElement('span');
+          batchSpan.classList.add('gestation-badge-batch');
+          batchSpan.textContent = batchDisplayName(evt.batch_name, evt.batch_number);
+          badge.appendChild(nameSpan);
           badge.appendChild(batchSpan);
         } else if (isCustom) {
           if (evt.is_private) {
@@ -731,6 +835,7 @@ document.getElementById('settings-btn').addEventListener('click', () => {
   document.getElementById('set-vaccinate').value = currentConfig.vaccinate_after_farrowing;
   document.getElementById('set-weaning').value = currentConfig.weaning_after_farrowing;
   document.getElementById('set-spacing').value = currentConfig.batch_spacing_days;
+  document.getElementById('show-gestation-events').checked = currentConfig.show_gestation_events;
   document.getElementById('settings-message').className = 'auth-message';
   document.getElementById('settings-message').textContent = '';
   showModal('settings-modal');
@@ -750,7 +855,8 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     lock_up_before_farrowing: parseInt(document.getElementById('set-lockup').value),
     vaccinate_after_farrowing: parseInt(document.getElementById('set-vaccinate').value),
     weaning_after_farrowing: parseInt(document.getElementById('set-weaning').value),
-    batch_spacing_days: parseInt(document.getElementById('set-spacing').value)
+    batch_spacing_days: parseInt(document.getElementById('set-spacing').value),
+    show_gestation_events: document.getElementById('show-gestation-events').checked
   };
   btn.disabled = true;
   btn.textContent = 'Saving...';
@@ -760,6 +866,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     msg.className = 'auth-message success';
     msg.textContent = 'Settings saved!';
     setTimeout(() => hideModal('settings-modal'), 1000);
+    updateCalendar();
   } catch (err) {
     msg.className = 'auth-message error';
     msg.textContent = err.message || 'Failed to save settings.';
@@ -1445,7 +1552,7 @@ async function renderYearView(year) {
         cls += ' has-event';
         const backgroundEvent = importantEventForBackground(dayEvents) || dayEvents[0];
         if (backgroundEvent) {
-          const backgroundStyle = eventStyle(backgroundEvent.event_type);
+          const backgroundStyle = eventStyle(backgroundEvent.event_type, backgroundEvent);
           bgStyle = 'background:' + backgroundStyle.bg;
         }
         const seen = {};
@@ -1620,7 +1727,7 @@ async function renderGestationTracker() {
   const ySteps = 5;
   const yInterval = Math.ceil(maxDays / ySteps / 10) * 10 || 10;
 
-  let html = '<div class="gestation-chart">';
+  let html = '<div class="gestation-chart" style="position:relative;">';
 
   // Y-axis
   html += '<div class="gestation-yaxis">';
@@ -1643,6 +1750,19 @@ async function renderGestationTracker() {
     html += '</div>';
     html += '<div class="gestation-bar-name">' + escapeHtml(label) + '</div>';
     html += '</div>';
+  }
+
+  // Gestation event horizontal lines
+  const gestEventTypes = customEventTypes.filter(t => t.gestation_day != null);
+  if (gestEventTypes.length > 0) {
+    const lineBottomBase = 24;
+    for (const gt of gestEventTypes) {
+      const dayVal = Math.min(gt.gestation_day, maxDays);
+      const lineBottom = Math.round(lineBottomBase + (dayVal / maxDays) * chartHeight);
+      html += '<div class="gestation-line" style="bottom:' + lineBottom + 'px;left:54px;border-top-color:' + escapeAttr(gt.color) + ';">';
+      html += '<span class="gestation-line-label" style="color:' + escapeAttr(gt.color) + ';">' + escapeHtml(gt.name) + ' d' + gt.gestation_day + '</span>';
+      html += '</div>';
+    }
   }
 
   html += '</div>';
@@ -1721,9 +1841,10 @@ function renderCustomEventTypes() {
   container.innerHTML = customEventTypes.map(t => {
     const days = Number(t.duration_days || 1);
     const lockIcon = t.is_private ? LOCK_ICON : '';
+    const gestationTag = t.gestation_day ? '<span class="custom-type-gestation-tag">Day ' + t.gestation_day + '</span>' : '';
     return '<div class="custom-type-row">'
       + '<span class="custom-type-dot" style="background:' + escapeAttr(t.color) + '"></span>'
-      + '<span class="custom-type-name">' + lockIcon + escapeHtml(t.name) + '</span>'
+      + '<span class="custom-type-name">' + lockIcon + escapeHtml(t.name) + gestationTag + '</span>'
       + '<span class="custom-type-days">' + days + ' day' + (days === 1 ? '' : 's') + '</span>'
       + '<button type="button" data-action="rename-custom-type" data-id="' + escapeAttr(t.id) + '">Rename</button>'
       + '<button type="button" class="delete-btn" data-action="delete-custom-type" data-id="' + escapeAttr(t.id) + '">Delete</button>'
@@ -1764,6 +1885,8 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
   const name = input.value.trim();
   const duration = parseInt(document.getElementById('custom-type-duration').value);
   const isPrivate = document.getElementById('custom-type-private').checked;
+  const isGestation = document.getElementById('custom-type-gestation').checked;
+  const gestationDay = isGestation ? parseInt(document.getElementById('custom-type-gestation-day').value) : null;
   if (!name) {
     msg.className = 'auth-message error';
     msg.textContent = 'Enter a name.';
@@ -1774,13 +1897,19 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
     msg.textContent = 'Days must be 1 to 30.';
     return;
   }
+  if (isGestation && (!gestationDay || gestationDay < 1 || gestationDay > 120)) {
+    msg.className = 'auth-message error';
+    msg.textContent = 'Gestation day must be 1 to 120.';
+    return;
+  }
   const { error } = await supabase.from('custom_event_types').insert({
     calendar_id: currentCalendarId,
     name,
     color: selectedCustomColor,
     duration_days: duration,
     created_by: user.id,
-    is_private: isPrivate
+    is_private: isPrivate,
+    gestation_day: gestationDay
   });
   if (error) {
     msg.className = 'auth-message error';
@@ -1790,11 +1919,18 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
   input.value = '';
   document.getElementById('custom-type-duration').value = 1;
   document.getElementById('custom-type-private').checked = false;
+  document.getElementById('custom-type-gestation').checked = false;
+  document.getElementById('gestation-day-row').style.display = 'none';
+  document.getElementById('custom-type-gestation-day').value = 45;
   msg.className = 'auth-message success';
   msg.textContent = 'Custom event created.';
   await loadCustomEventTypes();
   renderCustomEventTypes();
   await populateCustomEventTypeSelect();
+});
+
+document.getElementById('custom-type-gestation').addEventListener('change', function() {
+  document.getElementById('gestation-day-row').style.display = this.checked ? 'flex' : 'none';
 });
 
 async function renderFarmMembers(members) {

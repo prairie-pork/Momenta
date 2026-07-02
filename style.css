@@ -901,6 +901,19 @@ button:hover {
   flex-shrink: 0;
 }
 
+.custom-type-gestation-tag {
+  display: inline-block;
+  font-size: 0.7em;
+  font-weight: 600;
+  color: #7c2d12;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+  padding: 0 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 /* =============================================
    BATCH NAMING HINT
    ============================================= */
@@ -1162,7 +1175,7 @@ button:hover {
   position: absolute;
   left: 0;
   top: 0;
-  bottom: 40px;
+  bottom: 24px;
   width: 44px;
   display: flex;
   flex-direction: column;
@@ -1172,6 +1185,7 @@ button:hover {
   color: #555;
   text-align: right;
   padding-right: 6px;
+  pointer-events: none;
 }
 .gestation-yaxis span {
   line-height: 1;
@@ -1235,6 +1249,48 @@ button:hover {
 .gestation-bar-col:nth-child(6n+4) .gestation-bar { background: #475569; }
 .gestation-bar-col:nth-child(6n+5) .gestation-bar { background: #0369a1; }
 .gestation-bar-col:nth-child(6n+6) .gestation-bar { background: #a16207; }
+
+/* Gestation event horizontal lines */
+.gestation-line {
+  position: absolute;
+  right: 10px;
+  height: 0;
+  border-top: 2px dashed rgba(0,0,0,0.25);
+  pointer-events: none;
+  z-index: 2;
+}
+.gestation-line-label {
+  position: absolute;
+  left: 0;
+  top: -8px;
+  font-size: 0.65em;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.85);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+/* Gestation event badge on calendar */
+.event-badge.gestation-badge {
+  font-size: 0.7em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  line-height: 1.2;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+.event-badge.gestation-badge .gestation-badge-name {
+  font-weight: 600;
+}
+.event-badge.gestation-badge .gestation-badge-batch {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
 
 /* =============================================
    PRINT STYLES
@@ -1931,6 +1987,7 @@ button:hover {
   .gestation-yaxis {
     width: 32px;
     font-size: 0.7em;
+    bottom: 20px;
   }
   .gestation-bar-col {
     width: 44px;

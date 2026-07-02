@@ -313,6 +313,15 @@
           <span>Days</span>
           <input type="number" id="custom-type-duration" value="1" min="1" max="30">
         </label>
+        <label class="privacy-label custom-type-private" style="margin-top:6px;">
+          <input type="checkbox" id="custom-type-gestation">
+          <span class="privacy-checkmark"></span>
+          <span class="privacy-text">Gestation event</span>
+        </label>
+        <div id="gestation-day-row" class="custom-days-field-row" style="display:none;margin-top:4px;">
+          <span>On day</span>
+          <input type="number" id="custom-type-gestation-day" value="45" min="1" max="120">
+        </div>
         <div id="custom-type-colors" class="color-swatch-row"></div>
       </div>
       <div id="custom-type-message" class="auth-message"></div>
@@ -352,6 +361,13 @@
         <div class="form-group">
           <label for="set-spacing">Days Between Batches</label>
           <input type="number" id="set-spacing" value="14" min="7" max="60">
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+          <label class="privacy-label" style="font-weight:normal;font-size:0.95em;">
+            <input type="checkbox" id="show-gestation-events">
+            <span class="privacy-checkmark"></span>
+            <span class="privacy-text">Show gestation events on calendar</span>
+          </label>
         </div>
         <div id="settings-message" class="auth-message"></div>
         <div class="modal-buttons">

@@ -331,6 +331,17 @@ CREATE POLICY "custom_event_types_select" ON custom_event_types FOR SELECT
       WHERE e.event_type = 'custom:' || custom_event_types.id::text
       AND can_access_calendar(e.calendar_id, auth.uid())
     )
+    OR (
+      custom_event_types.gestation_day IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM calendar_members cm
+        WHERE cm.user_id = auth.uid()
+        AND cm.calendar_id IN (
+          SELECT cm2.calendar_id FROM calendar_members cm2
+          WHERE cm2.user_id = custom_event_types.created_by
+        )
+      )
+    )
   );
 
 CREATE POLICY "custom_event_types_insert" ON custom_event_types FOR INSERT
@@ -477,3 +488,7 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- 11. Gestation event columns
+ALTER TABLE custom_event_types ADD COLUMN IF NOT EXISTS gestation_day INT CHECK (gestation_day IS NULL OR gestation_day BETWEEN 1 AND 120);
+ALTER TABLE batch_configs ADD COLUMN IF NOT EXISTS show_gestation_events BOOLEAN NOT NULL DEFAULT false;
