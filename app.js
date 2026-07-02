@@ -1931,6 +1931,16 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
 
 document.getElementById('custom-type-gestation').addEventListener('change', function() {
   document.getElementById('gestation-day-row').style.display = this.checked ? 'flex' : 'none';
+  if (this.checked) {
+    document.getElementById('custom-type-private').checked = false;
+  }
+});
+
+document.getElementById('custom-type-private').addEventListener('change', function() {
+  if (this.checked) {
+    document.getElementById('custom-type-gestation').checked = false;
+    document.getElementById('gestation-day-row').style.display = 'none';
+  }
 });
 
 async function renderFarmMembers(members) {
