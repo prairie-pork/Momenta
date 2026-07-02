@@ -1545,6 +1545,7 @@ async function renderGestationTracker() {
   container.innerHTML = '<p style="text-align:center;color:#888;">Loading...</p>';
 
   // Fetch breed events and farrowing events for the current calendar
+  console.log('[Gestation] Fetching breed events for calendar:', currentCalendarId);
   const { data: breedEvents } = await supabase
     .from('events')
     .select('batch_name, batch_number, start_date, end_date')
@@ -1557,6 +1558,11 @@ async function renderGestationTracker() {
     .select('batch_name, batch_number')
     .eq('event_type', 'farrowing')
     .eq('calendar_id', currentCalendarId);
+
+  console.log('[Gestation] breedEvents:', breedEvents ? breedEvents.length : 0, 'farrowEvents:', farrowEvents ? farrowEvents.length : 0);
+  if (breedEvents && breedEvents.length > 0) {
+    console.log('[Gestation] first breed event:', breedEvents[0]);
+  }
 
   if (!breedEvents || breedEvents.length === 0) {
     container.innerHTML = '<p class="gestation-empty">No batches in gestation yet. Create a batch to get started.</p>';
@@ -1578,10 +1584,14 @@ async function renderGestationTracker() {
 
   for (const b of breedEvents) {
     const key = b.batch_name + '|' + b.batch_number;
-    if (farrowed.has(key)) continue;
+    if (farrowed.has(key)) {
+      console.log('[Gestation] skipping farrowed batch:', key);
+      continue;
+    }
 
     const breedStart = new Date(b.start_date + 'T00:00:00');
     const daysSince = Math.round((today - breedStart) / (1000 * 60 * 60 * 24));
+    console.log('[Gestation] in gestation:', key, 'daysSince:', daysSince, 'breedStart:', b.start_date);
     gestationBatches.push({
       batch_name: b.batch_name,
       batch_number: b.batch_number,
@@ -1589,6 +1599,8 @@ async function renderGestationTracker() {
       breed_date: b.start_date
     });
   }
+
+  console.log('[Gestation] gestationBatches count:', gestationBatches.length, 'batches:', gestationBatches.map(g => ({ name: batchDisplayName(g.batch_name, g.batch_number), days: g.days })));
 
   if (gestationBatches.length === 0) {
     container.innerHTML = '<p class="gestation-empty">All batches have farrowed. Nothing in gestation right now.</p>';
