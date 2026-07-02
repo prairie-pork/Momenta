@@ -323,6 +323,11 @@ AS $$
     OR EXISTS (SELECT 1 FROM calendar_members WHERE calendar_id = cal_id AND user_id = uid);
 $$;
 
+-- 11. Gestation event columns (must exist before the policy below references gestation_day)
+ALTER TABLE custom_event_types ADD COLUMN IF NOT EXISTS gestation_day INT CHECK (gestation_day IS NULL OR gestation_day BETWEEN 1 AND 120);
+ALTER TABLE batch_configs ADD COLUMN IF NOT EXISTS show_gestation_events BOOLEAN NOT NULL DEFAULT false;
+
+DROP POLICY IF EXISTS "custom_event_types_select" ON custom_event_types;
 CREATE POLICY "custom_event_types_select" ON custom_event_types FOR SELECT
   USING (
     created_by = auth.uid()
@@ -488,7 +493,3 @@ BEGIN
   END IF;
 END;
 $$;
-
--- 11. Gestation event columns
-ALTER TABLE custom_event_types ADD COLUMN IF NOT EXISTS gestation_day INT CHECK (gestation_day IS NULL OR gestation_day BETWEEN 1 AND 120);
-ALTER TABLE batch_configs ADD COLUMN IF NOT EXISTS show_gestation_events BOOLEAN NOT NULL DEFAULT false;
