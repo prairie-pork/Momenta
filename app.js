@@ -1555,7 +1555,7 @@ async function renderGestationTracker() {
 
   const { data: farrowEvents } = await supabase
     .from('events')
-    .select('batch_name, batch_number')
+    .select('batch_name, batch_number, start_date')
     .eq('event_type', 'farrowing')
     .eq('calendar_id', currentCalendarId);
 
@@ -1569,29 +1569,36 @@ async function renderGestationTracker() {
     return;
   }
 
-  // Build set of batch keys that have farrowed
-  const farrowed = new Set();
+  // Build map of farrow start dates by batch key
+  const farrowMap = {};
   if (farrowEvents) {
     for (const f of farrowEvents) {
-      farrowed.add(f.batch_name + '|' + f.batch_number);
+      const key = f.batch_name + '|' + f.batch_number;
+      if (!farrowMap[key] || f.start_date < farrowMap[key]) {
+        farrowMap[key] = f.start_date;
+      }
     }
   }
 
   // Filter to only in-gestation batches
   const today = getToday();
+  const todayStr = fmtDate(today);
   const PREGNANCY_MAX = 120;
   const gestationBatches = [];
 
   for (const b of breedEvents) {
     const key = b.batch_name + '|' + b.batch_number;
-    if (farrowed.has(key)) {
-      console.log('[Gestation] skipping farrowed batch:', key);
+    const farrowDate = farrowMap[key];
+
+    // Skip if farrow date has already arrived or passed
+    if (farrowDate && farrowDate <= todayStr) {
+      console.log('[Gestation] farrowed:', key, 'farrowDate:', farrowDate, 'today:', todayStr);
       continue;
     }
 
     const breedStart = new Date(b.start_date + 'T00:00:00');
     const daysSince = Math.round((today - breedStart) / (1000 * 60 * 60 * 24));
-    console.log('[Gestation] in gestation:', key, 'daysSince:', daysSince, 'breedStart:', b.start_date);
+    console.log('[Gestation] in gestation:', key, 'daysSince:', daysSince, 'breedStart:', b.start_date, 'farrowDate:', farrowDate || 'none');
     gestationBatches.push({
       batch_name: b.batch_name,
       batch_number: b.batch_number,
