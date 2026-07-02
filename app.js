@@ -1721,11 +1721,11 @@ async function renderGestationTracker() {
     return;
   }
 
-  // Build bar chart
-  const maxDays = Math.max(...gestationBatches.map(g => g.days), PREGNANCY_MAX);
+  // Build bar chart — fixed 120-day axis so scale is consistent
+  const axisMax = 120;
   const chartHeight = 280;
-  const ySteps = 5;
-  const yInterval = Math.ceil(maxDays / ySteps / 10) * 10 || 10;
+  const yInterval = 15;
+  const ySteps = axisMax / yInterval;
 
   let html = '<div class="gestation-chart" style="position:relative;">';
 
@@ -1739,7 +1739,7 @@ async function renderGestationTracker() {
 
   // Bars
   for (const g of gestationBatches) {
-    const pct = Math.min(g.days / maxDays, 1);
+    const pct = Math.min(g.days / axisMax, 1);
     const barH = Math.max(4, Math.round(pct * chartHeight));
     const label = batchDisplayName(g.batch_name, g.batch_number);
     html += '<div class="gestation-bar-col">';
@@ -1759,8 +1759,8 @@ async function renderGestationTracker() {
     const numBars = gestationBatches.length;
     const labelLeft = Math.round(numBars * 88 - 28);
     for (const gt of gestEventTypes) {
-      const dayVal = Math.min(gt.gestation_day, maxDays);
-      const lineBottom = Math.round(lineBottomBase + (dayVal / maxDays) * chartHeight);
+      const dayVal = Math.min(gt.gestation_day, axisMax);
+      const lineBottom = Math.round(lineBottomBase + (dayVal / axisMax) * chartHeight);
       html += '<div class="gestation-line" style="bottom:' + lineBottom + 'px;left:54px;border-top-color:' + escapeAttr(gt.color) + ';">';
       html += '<span class="gestation-line-label" style="left:' + labelLeft + 'px;top:-8px;color:' + escapeAttr(gt.color) + ';">' + escapeHtml(gt.name) + ' d' + gt.gestation_day + '</span>';
       html += '</div>';
