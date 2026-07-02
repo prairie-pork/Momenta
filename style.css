@@ -1261,13 +1261,27 @@ button:hover {
 }
 .gestation-line-label {
   position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 0;
   font-size: 0.65em;
   font-weight: 600;
   color: #555;
-  white-space: nowrap;
   background: rgba(255,255,255,0.85);
   padding: 0 4px;
   border-radius: 2px;
+  cursor: pointer;
+}
+.gestation-line-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.gestation-line-day {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* Gestation event badge on calendar */
@@ -2003,10 +2017,8 @@ button:hover {
     font-size: 0.75em;
     top: -20px;
   }
-  .gestation-line-label {
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .gestation-line-name {
+    max-width: 60px;
   }
 }
 

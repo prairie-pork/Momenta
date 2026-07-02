@@ -1797,8 +1797,11 @@ async function renderGestationTracker() {
     for (const gt of gestEventTypes) {
       const dayVal = Math.min(gt.gestation_day, axisMax);
       const lineBottom = Math.round(lineBottomBase + (dayVal / axisMax) * chartHeight);
-      html += '<div class="gestation-line" style="bottom:' + lineBottom + 'px;left:54px;border-top-color:' + escapeAttr(gt.color) + ';">';
-      html += '<span class="gestation-line-label" title="' + escapeAttr(gt.name) + ' d' + gt.gestation_day + '" style="left:' + labelLeft + 'px;top:-8px;color:' + escapeAttr(gt.color) + ';">' + escapeHtml(gt.name) + ' d' + gt.gestation_day + '</span>';
+      html += '<div class="gestation-line" data-gest-name="' + escapeAttr(gt.name) + '" data-gest-day="' + gt.gestation_day + '" style="bottom:' + lineBottom + 'px;left:54px;border-top-color:' + escapeAttr(gt.color) + ';">';
+      html += '<span class="gestation-line-label" style="left:' + labelLeft + 'px;top:-8px;color:' + escapeAttr(gt.color) + ';">';
+      html += '<span class="gestation-line-name">' + escapeHtml(gt.name) + '</span>';
+      html += '<span class="gestation-line-day"> d' + gt.gestation_day + '</span>';
+      html += '</span>';
       html += '</div>';
     }
   }
@@ -1806,6 +1809,17 @@ async function renderGestationTracker() {
   html += '</div>';
 
   container.innerHTML = html;
+
+  // Tap on gestation line label → show event name popup
+  container.querySelectorAll('.gestation-line').forEach(line => {
+    line.addEventListener('click', (e) => {
+      if (e.target.closest('.gestation-line-label')) {
+        const name = line.dataset.gestName || 'Event';
+        const day = line.dataset.gestDay || '';
+        alert(name + ' — day ' + day);
+      }
+    });
+  });
 }
 
 // =============================================
