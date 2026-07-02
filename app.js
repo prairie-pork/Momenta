@@ -1553,13 +1553,13 @@ async function renderGestationTracker() {
     .eq('calendar_id', currentCalendarId)
     .order('start_date', { ascending: true });
 
-  const { data: farrowEvents } = await supabase
+  const { data: movedInEvents } = await supabase
     .from('events')
     .select('batch_name, batch_number, start_date')
-    .eq('event_type', 'farrowing')
+    .eq('event_type', 'lock_up')
     .eq('calendar_id', currentCalendarId);
 
-  console.log('[Gestation] breedEvents:', breedEvents ? breedEvents.length : 0, 'farrowEvents:', farrowEvents ? farrowEvents.length : 0);
+  console.log('[Gestation] breedEvents:', breedEvents ? breedEvents.length : 0, 'movedInEvents:', movedInEvents ? movedInEvents.length : 0);
   if (breedEvents && breedEvents.length > 0) {
     console.log('[Gestation] first breed event:', breedEvents[0]);
   }
@@ -1569,13 +1569,13 @@ async function renderGestationTracker() {
     return;
   }
 
-  // Build map of farrow start dates by batch key
-  const farrowMap = {};
-  if (farrowEvents) {
-    for (const f of farrowEvents) {
+  // Build map of move-in dates by batch key
+  const movedInMap = {};
+  if (movedInEvents) {
+    for (const f of movedInEvents) {
       const key = f.batch_name + '|' + f.batch_number;
-      if (!farrowMap[key] || f.start_date < farrowMap[key]) {
-        farrowMap[key] = f.start_date;
+      if (!movedInMap[key] || f.start_date < movedInMap[key]) {
+        movedInMap[key] = f.start_date;
       }
     }
   }
@@ -1588,17 +1588,17 @@ async function renderGestationTracker() {
 
   for (const b of breedEvents) {
     const key = b.batch_name + '|' + b.batch_number;
-    const farrowDate = farrowMap[key];
+    const movedInDate = movedInMap[key];
 
-    // Skip if farrow date has already arrived or passed
-    if (farrowDate && farrowDate <= todayStr) {
-      console.log('[Gestation] farrowed:', key, 'farrowDate:', farrowDate, 'today:', todayStr);
+    // Skip if move-in date has already arrived or passed (batch is out of gestation barn)
+    if (movedInDate && movedInDate <= todayStr) {
+      console.log('[Gestation] moved in:', key, 'moveInDate:', movedInDate, 'today:', todayStr);
       continue;
     }
 
     const breedStart = new Date(b.start_date + 'T00:00:00');
     const daysSince = Math.round((today - breedStart) / (1000 * 60 * 60 * 24));
-    console.log('[Gestation] in gestation:', key, 'daysSince:', daysSince, 'breedStart:', b.start_date, 'farrowDate:', farrowDate || 'none');
+    console.log('[Gestation] in gestation:', key, 'daysSince:', daysSince, 'breedStart:', b.start_date, 'moveInDate:', movedInDate || 'none');
     gestationBatches.push({
       batch_name: b.batch_name,
       batch_number: b.batch_number,
