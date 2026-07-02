@@ -1692,11 +1692,13 @@ async function renderGestationTracker() {
     .eq('calendar_id', currentCalendarId)
     .order('start_date', { ascending: true });
 
-  const { data: movedInEvents } = await supabase
+  const { data: movedInEvents, error: movedInErr } = await supabase
     .from('events')
     .select('batch_name, batch_number, start_date')
     .eq('event_type', 'lock_up')
     .eq('calendar_id', currentCalendarId);
+
+  if (movedInErr) console.error('[Gestation] lock_up query error:', movedInErr);
 
   console.log('[Gestation] breedEvents:', breedEvents ? breedEvents.length : 0, 'movedInEvents:', movedInEvents ? movedInEvents.length : 0);
   if (breedEvents && breedEvents.length > 0) {
@@ -1731,13 +1733,22 @@ async function renderGestationTracker() {
 
     // Skip if move-in date has already arrived or passed (batch is out of gestation barn)
     if (movedInDate && movedInDate <= todayStr) {
-      console.log('[Gestation] moved in:', key, 'moveInDate:', movedInDate, 'today:', todayStr);
+      console.log('[Gestation] moved in:', key, 'moveInDate:', movedInDate, 'today:', todayStr, '→ SKIP');
       continue;
+    }
+    if (!movedInDate) {
+      console.log('[Gestation] no lock_up event for:', key);
     }
 
     const breedStart = new Date(b.start_date + 'T00:00:00');
     const daysSince = Math.round((today - breedStart) / (1000 * 60 * 60 * 24));
     console.log('[Gestation] in gestation:', key, 'daysSince:', daysSince, 'breedStart:', b.start_date, 'moveInDate:', movedInDate || 'none');
+
+    // Safety net: if no lock_up event but days exceed pregnancy window, assume batch should be gone
+    if (!movedInDate && daysSince > PREGNANCY_MAX) {
+      console.log('[Gestation] no lock_up and past PREGNANCY_MAX for:', key, 'daysSince:', daysSince);
+      continue;
+    }
     gestationBatches.push({
       batch_name: b.batch_name,
       batch_number: b.batch_number,
@@ -2241,6 +2252,11 @@ function onTimeTravelChange(val) {
   if (mobileTimeSlider) mobileTimeSlider.value = val;
   updateTimeTravelLabel();
   updateCalendar();
+  // Re-render gestation tracker if modal is open so batches appear/leave based on new offset
+  const gestationModal = document.getElementById('gestation-modal');
+  if (gestationModal && gestationModal.style.display !== 'none') {
+    renderGestationTracker();
+  }
 }
 
 if (timeSlider) {
