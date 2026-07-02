@@ -1922,6 +1922,8 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
   document.getElementById('custom-type-gestation').checked = false;
   document.getElementById('gestation-day-row').style.display = 'none';
   document.getElementById('custom-type-gestation-day').value = 45;
+  const rangeRow = document.getElementById('range-row');
+  if (rangeRow) rangeRow.style.display = '';
   msg.className = 'auth-message success';
   msg.textContent = 'Custom event created.';
   await loadCustomEventTypes();
@@ -1931,6 +1933,8 @@ document.getElementById('add-custom-type-btn').addEventListener('click', async (
 
 document.getElementById('custom-type-gestation').addEventListener('change', function() {
   document.getElementById('gestation-day-row').style.display = this.checked ? 'flex' : 'none';
+  const rangeRow = document.getElementById('range-row');
+  if (rangeRow) rangeRow.style.display = this.checked ? 'none' : '';
   if (this.checked) {
     document.getElementById('custom-type-private').checked = false;
   }
@@ -1940,6 +1944,8 @@ document.getElementById('custom-type-private').addEventListener('change', functi
   if (this.checked) {
     document.getElementById('custom-type-gestation').checked = false;
     document.getElementById('gestation-day-row').style.display = 'none';
+    const rangeRow = document.getElementById('range-row');
+    if (rangeRow) rangeRow.style.display = '';
   }
 });
 
