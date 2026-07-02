@@ -1970,29 +1970,6 @@ if (customTypesList) {
   });
 }
 
-// Tap any custom event type row to see full details (event delegation)
-const customTypesList = document.getElementById('custom-event-types-list');
-if (customTypesList) {
-  customTypesList.addEventListener('click', (e) => {
-    const row = e.target.closest('.custom-type-row');
-    if (!row || e.target.closest('button')) return;
-    const id = row.dataset.customTypeId;
-    const t = customEventTypes.find(ct => ct.id === id);
-    if (!t) return;
-    const icon = t.is_private ? LOCK_ICON : '';
-    const gestationInfo = t.gestation_day ? '<div style="margin:8px 0;"><strong>Gestation Day:</strong> ' + t.gestation_day + '</div>' : '';
-    document.getElementById('event-detail-title').innerHTML = icon + escapeHtml(t.name);
-    document.getElementById('event-detail-body').innerHTML = ''
-      + '<div style="margin:12px 0;"><strong>Duration:</strong> ' + (t.duration_days || 1) + ' day' + ((t.duration_days || 1) === 1 ? '' : 's') + '</div>'
-      + gestationInfo
-      + '<div style="margin-top:16px;display:flex;align-items:center;gap:8px;">'
-      + '<span style="width:14px;height:14px;border-radius:4px;background:' + escapeAttr(t.color) + ';flex-shrink:0;"></span>'
-      + '<span style="font-size:0.85em;color:#666;">' + escapeHtml(t.name) + '</span>'
-      + '</div>';
-    showModal('event-detail-modal');
-  });
-}
-
 document.getElementById('add-custom-type-btn').addEventListener('click', async () => {
   const msg = document.getElementById('custom-type-message');
   const input = document.getElementById('custom-type-name');
