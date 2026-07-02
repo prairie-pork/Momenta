@@ -1265,9 +1265,6 @@ button:hover {
   font-weight: 600;
   color: #555;
   white-space: nowrap;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   background: rgba(255,255,255,0.85);
   padding: 0 4px;
   border-radius: 2px;
@@ -2005,6 +2002,11 @@ button:hover {
   .gestation-bar-label {
     font-size: 0.75em;
     top: -20px;
+  }
+  .gestation-line-label {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

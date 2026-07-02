@@ -1789,7 +1789,11 @@ async function renderGestationTracker() {
   if (gestEventTypes.length > 0) {
     const lineBottomBase = 24;
     const numBars = gestationBatches.length;
-    const labelLeft = Math.round(numBars * 88 - 28);
+    const isMobileView = window.innerWidth <= 560;
+    const colW = isMobileView ? 44 : 64;
+    const gap = isMobileView ? 12 : 24;
+    const padLeft = isMobileView ? 36 : 50;
+    const labelLeft = Math.round(padLeft + numBars * colW + (numBars - 1) * gap - 54 + 4);
     for (const gt of gestEventTypes) {
       const dayVal = Math.min(gt.gestation_day, axisMax);
       const lineBottom = Math.round(lineBottomBase + (dayVal / axisMax) * chartHeight);
