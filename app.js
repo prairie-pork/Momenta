@@ -1800,7 +1800,7 @@ async function renderGestationTracker() {
       html += '<div class="gestation-line" data-gest-name="' + escapeAttr(gt.name) + '" data-gest-day="' + gt.gestation_day + '" style="bottom:' + lineBottom + 'px;left:54px;border-top-color:' + escapeAttr(gt.color) + ';">';
       html += '<span class="gestation-line-label" style="left:' + labelLeft + 'px;top:-8px;color:' + escapeAttr(gt.color) + ';">';
       html += '<span class="gestation-line-name">' + escapeHtml(gt.name) + '</span>';
-      html += '<span class="gestation-line-day"> d' + gt.gestation_day + '</span>';
+      html += '<span class="gestation-line-day">d' + gt.gestation_day + '</span>';
       html += '</span>';
       html += '</div>';
     }
@@ -1894,9 +1894,12 @@ function renderCustomEventTypes() {
     const days = Number(t.duration_days || 1);
     const lockIcon = t.is_private ? LOCK_ICON : '';
     const gestationTag = t.gestation_day ? '<span class="custom-type-gestation-tag">Day ' + t.gestation_day + '</span>' : '';
-    return '<div class="custom-type-row">'
+    return '<div class="custom-type-row" data-custom-type-id="' + escapeAttr(t.id) + '">'
       + '<span class="custom-type-dot" style="background:' + escapeAttr(t.color) + '"></span>'
-      + '<span class="custom-type-name">' + lockIcon + escapeHtml(t.name) + gestationTag + '</span>'
+      + '<span class="custom-type-name-wrapper">'
+      + '<span class="custom-type-name">' + lockIcon + escapeHtml(t.name) + '</span>'
+      + gestationTag
+      + '</span>'
       + '<span class="custom-type-days">' + days + ' day' + (days === 1 ? '' : 's') + '</span>'
       + '<button type="button" data-action="rename-custom-type" data-id="' + escapeAttr(t.id) + '">Rename</button>'
       + '<button type="button" class="delete-btn" data-action="delete-custom-type" data-id="' + escapeAttr(t.id) + '">Delete</button>'
@@ -1927,6 +1930,25 @@ function renderCustomEventTypes() {
       renderCustomEventTypes();
       await populateCustomEventTypeSelect();
       await updateCalendar();
+    });
+  });
+  container.querySelectorAll('.custom-type-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      const id = row.dataset.customTypeId;
+      const t = customEventTypes.find(ct => ct.id === id);
+      if (!t) return;
+      const icon = t.is_private ? LOCK_ICON : '';
+      const gestationInfo = t.gestation_day ? '<div style="margin:8px 0;"><strong>Gestation Day:</strong> ' + t.gestation_day + '</div>' : '';
+      document.getElementById('event-detail-title').innerHTML = icon + escapeHtml(t.name);
+      document.getElementById('event-detail-body').innerHTML = ''
+        + '<div style="margin:12px 0;"><strong>Duration:</strong> ' + (t.duration_days || 1) + ' day' + ((t.duration_days || 1) === 1 ? '' : 's') + '</div>'
+        + gestationInfo
+        + '<div style="margin-top:16px;display:flex;align-items:center;gap:8px;">'
+        + '<span style="width:14px;height:14px;border-radius:4px;background:' + escapeAttr(t.color) + ';flex-shrink:0;"></span>'
+        + '<span style="font-size:0.85em;color:#666;">' + escapeHtml(t.name) + '</span>'
+        + '</div>';
+      showModal('event-detail-modal');
     });
   });
 }
